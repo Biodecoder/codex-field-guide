@@ -7,12 +7,16 @@ import {
   CheckCircle2,
   ChevronRight,
   Clipboard,
+  ClipboardCheck,
   ExternalLink,
+  Eye,
   GitBranch,
+  Hand,
   Maximize2,
   Menu,
   MousePointerClick,
   PanelLeft,
+  Play,
   Rocket,
   Search,
   Settings2,
@@ -53,6 +57,49 @@ const learningMap = [
   { label: 'Advanced', body: 'Go deeper when ready', chapter: 'level-up', icon: Rocket },
 ] satisfies Array<{ label: string; body: string; chapter: ChapterId; icon: typeof Sprout }>
 
+const permissionFlow = [
+  {
+    id: 'request',
+    label: 'Request',
+    title: 'Codex asks before an impactful action.',
+    body: 'You see the proposed desktop action before it happens, such as opening an app, clicking a control, or continuing a sensitive flow.',
+    note: 'Pause whenever the request feels broader than the task you gave.',
+    icon: MousePointerClick,
+  },
+  {
+    id: 'review',
+    label: 'Review',
+    title: 'Read the scope, destination, and likely effect.',
+    body: 'Check which app or window is involved and what the action will change. A narrow request is easier to understand and safer to approve.',
+    note: 'Close unrelated or sensitive windows before desktop work begins.',
+    icon: Eye,
+  },
+  {
+    id: 'choose',
+    label: 'Choose',
+    title: 'Approve once, allow always, or deny.',
+    body: 'Use the smallest permission that fits the moment. For a beginner workflow, approving one action at a time keeps the feedback loop clear.',
+    note: 'Deny anything unexpected. You can always restate the task more precisely.',
+    icon: Hand,
+  },
+  {
+    id: 'act',
+    label: 'Act',
+    title: 'Codex works inside the approved scope.',
+    body: 'Stay nearby while the desktop action runs. If the app, tab, or window changes unexpectedly, stop the run and review what happened.',
+    note: 'A visible, bounded task is a good Computer Use task.',
+    icon: Play,
+  },
+  {
+    id: 'audit',
+    label: 'Audit',
+    title: 'Review the visible result before continuing.',
+    body: 'Check the screen, changed files, and any follow-up request. The final proof should match the task you intended to complete.',
+    note: 'Treat the result as evidence to inspect, not an automatic success.',
+    icon: ClipboardCheck,
+  },
+]
+
 function App() {
   const [activeChapter, setActiveChapter] = useState<ChapterId>('start')
   const [activeSetup, setActiveSetup] = useState(setupSteps[0].id)
@@ -66,6 +113,7 @@ function App() {
   const [activeTour, setActiveTour] = useState(tourShots[0].id)
   const [activeSettings, setActiveSettings] = useState(settingsPanels[0].id)
   const [activeTool, setActiveTool] = useState(toolPanels[0].id)
+  const [activePermission, setActivePermission] = useState(permissionFlow[0].id)
   const [promptCategory, setPromptCategory] = useState<PromptCategory>('all')
   const [promptSearch, setPromptSearch] = useState('')
   const [expandedPrompt, setExpandedPrompt] = useState(promptLibrary[0].id)
@@ -79,6 +127,7 @@ function App() {
   const tour = tourShots.find((shot) => shot.id === activeTour) ?? tourShots[0]
   const settings = settingsPanels.find((panel) => panel.id === activeSettings) ?? settingsPanels[0]
   const tool = toolPanels.find((panel) => panel.id === activeTool) ?? toolPanels[0]
+  const permission = permissionFlow.find((step) => step.id === activePermission) ?? permissionFlow[0]
   const track = learningTracks.find((item) => item.label === activeTrack) ?? learningTracks[0]
   const progress = Math.round((completedSetup.length / setupSteps.length) * 100)
 
@@ -467,6 +516,37 @@ function App() {
               onZoom={() => setModalImage({ src: tool.image, alt: tool.imageAlt })}
             />
           </div>
+          <section className="permission-flow" aria-labelledby="permission-flow-title" data-reveal>
+            <div className="permission-flow-heading">
+              <p className="eyebrow">Computer Use guardrails</p>
+              <h3 id="permission-flow-title">Stay in control, one approval at a time.</h3>
+              <p>Explore the five moments in a careful desktop workflow.</p>
+            </div>
+            <div className="permission-flow-main">
+              <div className="permission-flow-track" role="tablist" aria-label="Computer Use permission flow">
+                {permissionFlow.map(({ id, label, icon: Icon }, index) => (
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={activePermission === id}
+                    className={activePermission === id ? 'is-selected' : ''}
+                    key={id}
+                    onClick={() => setActivePermission(id)}
+                  >
+                    <span>{index + 1}</span>
+                    <i><Icon aria-hidden="true" /></i>
+                    <strong>{label}</strong>
+                  </button>
+                ))}
+              </div>
+              <article className="permission-flow-detail">
+                <p className="eyebrow">Step {permissionFlow.findIndex((step) => step.id === permission.id) + 1}</p>
+                <h4>{permission.title}</h4>
+                <p>{permission.body}</p>
+                <aside><ShieldCheck aria-hidden="true" /> {permission.note}</aside>
+              </article>
+            </div>
+          </section>
           <div className="safety-band" data-reveal>
             <MousePointerClick aria-hidden="true" />
             <div>

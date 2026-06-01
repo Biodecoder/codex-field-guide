@@ -44,6 +44,6 @@ The UI itself is code-native React and CSS, not a static screenshot.
 
 ## Fidelity ledger
 
-- Keep: compact top bar, left chapter rail, setup-first workbench, restrained editorial typography, quiet whitespace, hairline dividers, green/coral/blue accents, a spacious visual learning map, and a prompt library with category filters.
+- Keep: compact top bar, left chapter rail, setup-first workbench, restrained editorial typography, quiet whitespace, hairline dividers, OpenAI-inspired blue tones, a spacious visual learning map, a focused interactive permission flow, and a prompt library with category filters.
 - Adapt: use real official Codex screenshots with source captions instead of simulated product screens; use generated figures only for visual explanation.
 - Omit: decorative dashboard metrics, invented social proof, noisy card grids, and any element that makes the beginner path feel crowded.
