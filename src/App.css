@@ -214,12 +214,13 @@ kbd {
   position: fixed;
   inset: 80px auto 0 0;
   z-index: 30;
-  width: 270px;
+  width: 300px;
   padding: 26px 15px;
   border-right: 1px solid var(--line);
   display: flex;
   flex-direction: column;
   gap: 15px;
+  overflow-y: auto;
   background: #ffffff;
 }
 
@@ -228,6 +229,11 @@ kbd {
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+.rail-heading > div {
+  display: grid;
+  gap: 5px;
 }
 
 .rail-heading span,
@@ -239,26 +245,43 @@ kbd {
   text-transform: uppercase;
 }
 
+.rail-heading small {
+  color: var(--muted);
+  font-size: var(--text-caption);
+  font-weight: 750;
+}
+
 .rail-heading button {
   display: none;
 }
 
 .chapter-rail nav {
+  position: relative;
   display: grid;
-  gap: 5px;
+  gap: 7px;
+}
+
+.chapter-rail nav::before {
+  position: absolute;
+  top: 31px;
+  bottom: 31px;
+  left: 30px;
+  width: 1px;
+  background: var(--line-strong);
+  content: '';
 }
 
 .chapter-rail nav button {
   position: relative;
-  min-height: 66px;
-  padding: 9px;
+  min-height: 82px;
+  padding: 10px 9px;
   border: 0;
   border-left: 3px solid transparent;
   border-radius: 4px;
   display: grid;
-  grid-template-columns: 26px 1fr 16px;
+  grid-template-columns: 39px 1fr 16px;
   align-items: center;
-  gap: 8px;
+  gap: 11px;
   color: var(--muted);
   background: transparent;
   cursor: pointer;
@@ -276,7 +299,6 @@ kbd {
   background: var(--green-soft);
 }
 
-.chapter-index,
 .step-number {
   width: 26px;
   height: 26px;
@@ -288,6 +310,32 @@ kbd {
   background: #ffffff;
   font-size: var(--text-caption);
   font-weight: 750;
+}
+
+.rail-map-icon {
+  position: relative;
+  z-index: 1;
+  width: 39px;
+  height: 39px;
+  border: 1px solid var(--green);
+  border-radius: 99px;
+  display: grid;
+  place-items: center;
+  color: var(--green);
+  background: #ffffff;
+  transition: color 180ms ease, background 180ms ease, transform 180ms ease;
+}
+
+.chapter-rail nav button:hover .rail-map-icon,
+.chapter-rail nav button.is-active .rail-map-icon {
+  color: #ffffff;
+  background: var(--green);
+  transform: translateY(-2px);
+}
+
+.rail-map-icon svg {
+  width: 19px;
+  height: 19px;
 }
 
 .chapter-rail nav span:nth-child(2) {
@@ -338,7 +386,7 @@ kbd {
 
 .guide-main {
   padding-top: 80px;
-  padding-left: 270px;
+  padding-left: 300px;
 }
 
 .chapter-section,
@@ -386,17 +434,6 @@ kbd {
   max-width: 780px;
 }
 
-.intro-grid {
-  display: grid;
-  grid-template-columns: minmax(400px, 0.9fr) minmax(500px, 1.1fr);
-  align-items: center;
-  gap: clamp(34px, 5vw, 82px);
-}
-
-.intro-grid > * {
-  min-width: 0;
-}
-
 .hero-copy h1 {
   max-width: 760px;
   margin: 13px 0 0;
@@ -440,111 +477,8 @@ kbd {
   margin-top: 28px;
 }
 
-.learning-overview {
-  padding: 24px;
-  border: 1px solid var(--line-strong);
-  background: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 20px 48px rgba(33, 88, 151, 0.1);
-}
-
-.learning-overview-heading {
-  padding-bottom: 18px;
-  border-bottom: 1px solid var(--line);
-  display: flex;
-  align-items: start;
-  justify-content: space-between;
-  gap: 18px;
-}
-
-.learning-overview-heading h2 {
-  margin: 8px 0 0;
-  font-family: var(--font-display);
-  font-size: 34px;
-  font-weight: 700;
-  line-height: 1.06;
-}
-
-.learning-overview-heading > span {
-  padding: 5px 8px;
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  color: var(--muted);
-  background: var(--soft);
-  font-size: var(--text-caption);
-  font-weight: 800;
-  white-space: nowrap;
-}
-
-.learning-map-track {
-  position: relative;
-  padding-top: 22px;
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-}
-
-.learning-map-track::before {
-  position: absolute;
-  top: 43px;
-  right: 8%;
-  left: 8%;
-  height: 1px;
-  background: var(--line-strong);
-  content: '';
-}
-
-.learning-map-track button {
-  position: relative;
-  padding: 0 8px;
-  border: 0;
-  display: grid;
-  justify-items: center;
-  gap: 8px;
-  color: var(--ink);
-  background: transparent;
-  cursor: pointer;
-  text-align: center;
-}
-
-.learning-map-track button:hover i,
-.learning-map-track button:focus-visible i {
-  color: #ffffff;
-  background: var(--green);
-  transform: translateY(-3px);
-}
-
-.learning-map-track i {
-  position: relative;
-  z-index: 1;
-  width: 44px;
-  height: 44px;
-  border: 1px solid var(--green);
-  border-radius: 99px;
-  display: grid;
-  place-items: center;
-  color: var(--green);
-  background: #ffffff;
-  transition: background 180ms ease, color 180ms ease, transform 180ms ease;
-}
-
-.learning-map-track svg {
-  width: 21px;
-  height: 21px;
-}
-
-.learning-map-track strong {
-  color: var(--green-deep);
-  font-size: var(--text-small);
-}
-
-.learning-map-track small {
-  max-width: 104px;
-  color: var(--muted);
-  font-size: var(--text-caption);
-  line-height: 1.4;
-}
-
 .setup-workbench {
-  margin-top: 58px;
+  margin-top: 64px;
   scroll-margin-top: 96px;
   border: 1px solid var(--line-strong);
   display: grid;
@@ -1715,17 +1649,6 @@ kbd {
   object-fit: contain;
 }
 
-@media (max-width: 1420px) {
-  .intro-grid {
-    grid-template-columns: 1fr;
-    gap: 38px;
-  }
-
-  .learning-overview {
-    max-width: 920px;
-  }
-}
-
 @media (max-width: 1220px) {
   .topbar {
     grid-template-columns: 270px minmax(180px, 1fr) auto auto;
@@ -1775,7 +1698,7 @@ kbd {
 
   .chapter-rail {
     inset: 80px auto 0 0;
-    width: 280px;
+    width: 300px;
     box-shadow: 18px 0 50px rgba(21, 63, 113, 0.18);
     transform: translateX(-110%);
     transition: transform 220ms ease;
@@ -1924,31 +1847,6 @@ kbd {
 
   .hero-lede {
     font-size: var(--text-reading);
-  }
-
-  .learning-overview {
-    margin-right: -16px;
-    margin-left: -16px;
-    padding: 18px 16px 20px;
-    border-right: 0;
-    border-left: 0;
-  }
-
-  .learning-overview-heading h2 {
-    font-size: 30px;
-  }
-
-  .learning-map-track {
-    margin-right: -16px;
-    padding-right: 16px;
-    padding-bottom: 6px;
-    overflow-x: auto;
-    grid-template-columns: repeat(5, 142px);
-  }
-
-  .learning-map-track::before {
-    right: 70px;
-    left: 70px;
   }
 
   .setup-workbench {

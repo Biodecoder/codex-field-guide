@@ -49,13 +49,19 @@ import './App.css'
 
 type ModalImage = { src: string; alt: string } | null
 
-const learningMap = [
-  { label: 'Beginner', body: 'Install and start safely', chapter: 'start', icon: Sprout },
-  { label: 'Workflow', body: 'Know your workspace', chapter: 'interface', icon: Workflow },
-  { label: 'Tools', body: 'Choose what helps', chapter: 'tools', icon: Wrench },
-  { label: 'Publish', body: 'Commit and share', chapter: 'ship', icon: Upload },
-  { label: 'Advanced', body: 'Go deeper when ready', chapter: 'level-up', icon: Rocket },
-] satisfies Array<{ label: string; body: string; chapter: ChapterId; icon: typeof Sprout }>
+const learningMap: Array<{ label: string; body: string; chapter: ChapterId; sections: ChapterId[]; icon: typeof Sprout }> = [
+  { label: 'Beginner', body: 'Install and start safely', chapter: 'start', sections: ['start'], icon: Sprout },
+  {
+    label: 'Workflow',
+    body: 'Know your workspace',
+    chapter: 'interface',
+    sections: ['interface', 'settings'],
+    icon: Workflow,
+  },
+  { label: 'Tools', body: 'Choose what helps', chapter: 'tools', sections: ['tools', 'prompts'], icon: Wrench },
+  { label: 'Publish', body: 'Commit and share', chapter: 'ship', sections: ['ship'], icon: Upload },
+  { label: 'Advanced', body: 'Go deeper when ready', chapter: 'level-up', sections: ['level-up'], icon: Rocket },
+]
 
 const permissionFlow = [
   {
@@ -241,26 +247,30 @@ function App() {
 
       <aside className={`chapter-rail ${mobileRailOpen ? 'is-open' : ''}`} aria-label="Learning chapters">
         <div className="rail-heading">
-          <span>Chapters</span>
+          <div>
+            <span>Learning map</span>
+            <small>5 chapters</small>
+          </div>
           <button type="button" onClick={() => setMobileRailOpen(false)}>
             <X aria-hidden="true" />
             <span className="sr-only">Close chapter navigation</span>
           </button>
         </div>
         <nav>
-          {chapters.map((chapter, index) => (
+          {learningMap.map(({ label, body, chapter, sections, icon: Icon }) => (
             <button
-              className={activeChapter === chapter.id ? 'is-active' : ''}
+              className={sections.includes(activeChapter) ? 'is-active' : ''}
               type="button"
-              key={chapter.id}
-              onClick={() => scrollToChapter(chapter.id)}
+              key={chapter}
+              onClick={() => scrollToChapter(chapter)}
+              aria-current={sections.includes(activeChapter) ? 'step' : undefined}
             >
-              <span className="chapter-index">{index + 1}</span>
+              <i className="rail-map-icon"><Icon aria-hidden="true" /></i>
               <span>
-                <strong>{chapter.label}</strong>
-                <small>{chapter.eyebrow}</small>
+                <strong>{label}</strong>
+                <small>{body}</small>
               </span>
-              {index === 0 && completedSetup.length === setupSteps.length ? (
+              {chapter === 'start' && completedSetup.length === setupSteps.length ? (
                 <CheckCircle2 className="chapter-check" aria-hidden="true" />
               ) : null}
             </button>
@@ -275,47 +285,26 @@ function App() {
 
       <main className="guide-main">
         <section className="chapter-section start-section" id="start">
-          <div className="intro-grid">
-            <div className="hero-copy" data-reveal>
-              <p className="eyebrow">Beginner path · about one hour</p>
-              <h1>Start with one calm hour.</h1>
-              <p className="hero-lede">
-                Set up the Codex app, create your first project, and send one safe prompt. The rest of the guide will
-                wait until you need it.
-              </p>
-              <div className="hero-actions">
-                <button
-                  className="primary-button"
-                  type="button"
-                  onClick={() => document.getElementById('setup-workbench')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-                >
-                  Begin setup <ArrowRight aria-hidden="true" />
-                </button>
-              </div>
-              <div className="hero-meta">
-                <span><CheckCircle2 aria-hidden="true" /> No coding-agent experience needed</span>
-                <span><ShieldCheck aria-hidden="true" /> Source-backed guidance</span>
-              </div>
+          <div className="hero-copy" data-reveal>
+            <p className="eyebrow">Beginner path · about one hour</p>
+            <h1>Start with one calm hour.</h1>
+            <p className="hero-lede">
+              Set up the Codex app, create your first project, and send one safe prompt. The rest of the guide will
+              wait until you need it.
+            </p>
+            <div className="hero-actions">
+              <button
+                className="primary-button"
+                type="button"
+                onClick={() => document.getElementById('setup-workbench')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              >
+                Begin setup <ArrowRight aria-hidden="true" />
+              </button>
             </div>
-
-            <section className="learning-overview" aria-labelledby="learning-map-title" data-reveal>
-              <div className="learning-overview-heading">
-                <div>
-                  <p className="eyebrow">Learning map</p>
-                  <h2 id="learning-map-title">See the path. Take one step.</h2>
-                </div>
-                <span>5 chapters</span>
-              </div>
-              <div className="learning-map-track">
-                {learningMap.map(({ label, body, chapter, icon: Icon }) => (
-                  <button type="button" key={label} onClick={() => scrollToChapter(chapter)}>
-                    <i><Icon aria-hidden="true" /></i>
-                    <strong>{label}</strong>
-                    <small>{body}</small>
-                  </button>
-                ))}
-              </div>
-            </section>
+            <div className="hero-meta">
+              <span><CheckCircle2 aria-hidden="true" /> No coding-agent experience needed</span>
+              <span><ShieldCheck aria-hidden="true" /> Source-backed guidance</span>
+            </div>
           </div>
 
           <div className="setup-workbench" id="setup-workbench" data-reveal>
