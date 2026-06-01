@@ -1,6 +1,6 @@
 # Codex Field Guide
 
-A polished React/Vite educational website for complete beginners learning the OpenAI Codex app. The guide teaches practical workflows for prompting, Computer Use, skills, plugins, repos, commits, publishing, model effort, review, worktrees, and advanced audit habits.
+A guided React/Vite learning website for complete beginners using the OpenAI Codex app. The guide starts with installation and a first local project, then opens into short interactive chapters for projects and threads, settings, Computer Use, skills, plugins, prompting, repos, commits, publishing, model effort, review, worktrees, and advanced audit habits.
 
 ## Run locally
 
@@ -27,13 +27,23 @@ This is a static Vite site. Common publishing paths:
 
 ## Source basis
 
-The Codex product guidance is derived from the current official Codex manual and links to the relevant OpenAI documentation in the page footer.
+The Codex product guidance is derived from the current official Codex manual. Product screenshots are downloaded from the official OpenAI Codex documentation and remain visibly labeled in the interface. Relevant documentation links open in a new tab from each lesson and from the page footer.
 
 ## Design notes
 
-The site uses two generated concept screenshots stored in `public/concepts/` as visual references:
+The site uses one generated concept screenshot stored in `public/concepts/` as a visual reference:
 
-- `codex-field-guide-top.png`
-- `codex-field-guide-deep-sections.png`
+- `codex-field-guide-v2-guided-console.png`
+
+Two generated educational figures live in `public/images/generated/`:
+
+- `setup-path-infographic.png`
+- `build-possibilities-infographic.png`
 
 The UI itself is code-native React and CSS, not a static screenshot.
+
+## Fidelity ledger
+
+- Keep: compact top bar, left chapter rail, setup-first workbench, restrained editorial typography, quiet whitespace, hairline dividers, green/coral/blue accents, and a prompt library with category filters.
+- Adapt: use real official Codex screenshots with source captions instead of simulated product screens; use generated figures only for visual explanation.
+- Omit: decorative dashboard metrics, invented social proof, noisy card grids, and any element that makes the beginner path feel crowded.

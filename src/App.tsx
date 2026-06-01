@@ -1,319 +1,122 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   ArrowRight,
   BookOpen,
   Bot,
-  Boxes,
   Check,
+  CheckCircle2,
   ChevronRight,
   Clipboard,
-  Code2,
-  Computer,
+  ExternalLink,
   GitBranch,
-  Globe2,
-  Layers3,
+  Maximize2,
+  Menu,
   MousePointerClick,
-  Play,
-  Rocket,
+  PanelLeft,
   Search,
+  Settings2,
   ShieldCheck,
   Sparkles,
-  TerminalSquare,
-  Wand2,
+  WandSparkles,
+  X,
 } from 'lucide-react'
+import {
+  chapters,
+  efforts,
+  learningTracks,
+  promptCategories,
+  promptLibrary,
+  settingsPanels,
+  setupSteps,
+  shippingSteps,
+  sourceLinks,
+  toolPanels,
+  tourShots,
+  type ChapterId,
+  type EffortId,
+  type PromptCategory,
+} from './content'
 import './App.css'
 
-type TrackId = 'beginner' | 'intermediate' | 'advanced'
-type EffortId = 'low' | 'medium' | 'high' | 'extra-high'
-type PromptId = 'learn' | 'build' | 'debug' | 'review' | 'publish'
-
-const sourceLinks = [
-  ['Best practices', 'https://developers.openai.com/codex/learn/best-practices'],
-  ['Prompting', 'https://developers.openai.com/codex/prompting'],
-  ['Codex app features', 'https://developers.openai.com/codex/app/features'],
-  ['Computer Use', 'https://developers.openai.com/codex/app/computer-use'],
-  ['In-app browser', 'https://developers.openai.com/codex/app/browser'],
-  ['Models', 'https://developers.openai.com/codex/models'],
-  ['Skills', 'https://developers.openai.com/codex/skills'],
-  ['Plugins', 'https://developers.openai.com/codex/plugins'],
-  ['MCP', 'https://developers.openai.com/codex/mcp'],
-  ['AGENTS.md', 'https://developers.openai.com/codex/guides/agents-md'],
-  ['Review pane', 'https://developers.openai.com/codex/app/review'],
-  ['Worktrees', 'https://developers.openai.com/codex/app/worktrees'],
-]
-
-const navItems = [
-  ['Start', 'start'],
-  ['First Run', 'first-run'],
-  ['Prompt Lab', 'prompt-lab'],
-  ['Tools', 'tools'],
-  ['Models', 'models'],
-  ['Publish', 'publish'],
-  ['Advanced', 'advanced'],
-]
-
-const tracks: Record<
-  TrackId,
-  {
-    name: string
-    title: string
-    description: string
-    actions: string[]
-  }
-> = {
-  beginner: {
-    name: 'Beginner',
-    title: 'Make one safe, visible change',
-    description:
-      'Open a real folder, ask for a tiny improvement, watch Codex inspect the files, then verify the result before you accept it.',
-    actions: [
-      'Pick a small repo or create a fresh folder.',
-      'Ask Codex to explain the app before editing.',
-      'Make one change with a clear “done when” condition.',
-      'Use the diff pane, run the app, then commit.',
-    ],
-  },
-  intermediate: {
-    name: 'Intermediate',
-    title: 'Turn good runs into repeatable workflow',
-    description:
-      'Move recurring preferences into AGENTS.md, install the right plugins, use browser review, and ask for tests or screenshots as proof.',
-    actions: [
-      'Write repo-specific instructions in AGENTS.md.',
-      'Use Browser for local web UI checks.',
-      'Install skills/plugins for repeated work.',
-      'Ask Codex to audit its own change before handoff.',
-    ],
-  },
-  advanced: {
-    name: 'Advanced',
-    title: 'Operate Codex like a small engineering system',
-    description:
-      'Use worktrees, cloud tasks, review policies, MCP, subagents, and automation only when the extra machinery buys safety or speed.',
-    actions: [
-      'Split parallel work into worktrees or cloud tasks.',
-      'Use high reasoning for ambiguous architecture.',
-      'Create skills for repeatable project workflows.',
-      'Gate risky changes with review, tests, and source evidence.',
-    ],
-  },
-}
-
-const firstRunSteps = [
-  {
-    title: 'Open a project folder',
-    body: 'Start local when you want Codex to read and edit files on your machine. Start a chat without a project for research or planning.',
-    prompt: 'Explain what this repository does. Do not edit files yet. List the main folders, how to run it, and what looks risky.',
-  },
-  {
-    title: 'Ask for a small scoped change',
-    body: 'A beginner-friendly prompt names the goal, context, constraints, and what proves the task is done.',
-    prompt:
-      'Add a clear empty state to the dashboard. Keep the existing design system. Done when the page builds, the empty state is visible, and no unrelated files changed.',
-  },
-  {
-    title: 'Watch the evidence',
-    body: 'Good Codex runs read files, make targeted edits, run checks, and explain what changed. If it skips verification, ask for it.',
-    prompt:
-      'Before you finish, run the relevant check, open the rendered page, and summarize exactly what evidence proves the change works.',
-  },
-  {
-    title: 'Review before committing',
-    body: 'Use the review pane for staged and unstaged changes. Comment on specific lines when you want a precise fix.',
-    prompt:
-      'Review the current diff for bugs, visual regressions, and missing tests. Fix only issues you can prove from the diff or local run.',
-  },
-]
-
-const promptExamples: Record<
-  PromptId,
-  {
-    label: string
-    icon: typeof BookOpen
-    summary: string
-    prompt: string
-  }
-> = {
-  learn: {
-    label: 'Understand',
-    icon: BookOpen,
-    summary: 'Use when you are new to a codebase.',
-    prompt:
-      'Read this repo without editing it. Explain the architecture in beginner language, list the most important files, and tell me the safest first change to make.',
-  },
-  build: {
-    label: 'Build',
-    icon: Wand2,
-    summary: 'Use when you know the outcome.',
-    prompt:
-      'Create a polished settings screen for this app. Match the existing UI patterns, include loading/error/empty states, run the build, and open the result in the browser before finishing.',
-  },
-  debug: {
-    label: 'Debug',
-    icon: Search,
-    summary: 'Use when something breaks.',
-    prompt:
-      'Reproduce this bug first, then identify the smallest code path that causes it. Add or update a test that fails before the fix and passes after it.',
-  },
-  review: {
-    label: 'Review',
-    icon: ShieldCheck,
-    summary: 'Use before accepting changes.',
-    prompt:
-      'Review the uncommitted changes like a senior engineer. Lead with bugs, regressions, and missing tests. If you find issues, fix them and rerun the relevant checks.',
-  },
-  publish: {
-    label: 'Publish',
-    icon: Rocket,
-    summary: 'Use when the app is ready to share.',
-    prompt:
-      'Prepare this site for publication. Check the production build, explain the deployment options, and create a short release checklist covering env vars, preview URL, and rollback.',
-  },
-}
-
-const tools = [
-  {
-    name: 'In-app Browser',
-    icon: Globe2,
-    bestFor: 'Local web pages, visual QA, comments on a rendered UI',
-    useWhen:
-      'The app runs on localhost or a public page does not need sign-in. Ask Codex to open the route, click through the flow, and fix visible issues.',
-    avoidWhen: 'The page needs your logged-in browser profile, cookies, extensions, or an existing Chrome tab.',
-  },
-  {
-    name: 'Computer Use',
-    icon: Computer,
-    bestFor: 'Desktop apps, simulators, settings screens, GUI-only bugs',
-    useWhen:
-      'The task depends on seeing and operating a macOS or Windows app. Keep the prompt narrow and stay present for sensitive actions.',
-    avoidWhen: 'A plugin, MCP server, file inspection, or the in-app browser can do the job more repeatably.',
-  },
-  {
-    name: 'Skills',
-    icon: Sparkles,
-    bestFor: 'Reusable task workflows with instructions and helper scripts',
-    useWhen:
-      'You repeat the same kind of task, such as accessibility audits, release checks, sprite pipelines, or document generation.',
-    avoidWhen: 'You only need one sentence of temporary guidance for the current run.',
-  },
-  {
-    name: 'Plugins',
-    icon: Boxes,
-    bestFor: 'Installable bundles of skills, apps, and MCP servers',
-    useWhen:
-      'You want Codex to work with GitHub, Slack, Gmail, Figma, Vercel, Netlify-style deploys, security scans, or a packaged team workflow.',
-    avoidWhen: 'A local skill is enough and you do not need distribution or external app access.',
-  },
-  {
-    name: 'MCP Servers',
-    icon: Layers3,
-    bestFor: 'Structured tools and current external context',
-    useWhen:
-      'Codex needs current docs, database tools, browser automation, Figma designs, Sentry logs, or GitHub actions beyond raw files.',
-    avoidWhen: 'Plain repo files already contain the source of truth.',
-  },
-]
-
-const efforts: Record<
-  EffortId,
-  {
-    label: string
-    speed: string
-    useFor: string
-    examples: string[]
-    caution: string
-  }
-> = {
-  low: {
-    label: 'Low',
-    speed: 'Fastest, least expensive attention',
-    useFor: 'Small, well-scoped edits where the path is obvious.',
-    examples: ['Rename a label', 'Format a file', 'Summarize a short README', 'Add a simple copy tweak'],
-    caution: 'Do not use it for fuzzy debugging or architecture decisions.',
-  },
-  medium: {
-    label: 'Medium',
-    speed: 'Balanced default',
-    useFor: 'Most everyday coding, explanations, and contained UI improvements.',
-    examples: ['Add a component', 'Write tests', 'Explain a module', 'Fix a known issue'],
-    caution: 'If Codex starts guessing, raise the effort or switch to Plan mode.',
-  },
-  high: {
-    label: 'High',
-    speed: 'Slower, deeper checks',
-    useFor: 'Complex debugging, cross-file refactors, security-sensitive reviews, and tricky frontend polish.',
-    examples: ['Trace a regression', 'Refactor shared state', 'Review a PR', 'Match a design screenshot'],
-    caution: 'Ask for verification so the extra reasoning turns into evidence.',
-  },
-  'extra-high': {
-    label: 'Extra High',
-    speed: 'Slowest, best for long agentic work',
-    useFor: 'Ambiguous, multi-step projects that need planning, implementation, testing, and audit loops.',
-    examples: ['Build a full app', 'Migrate a stack', 'Run a deep repo audit', 'Coordinate tools and artifacts'],
-    caution: 'Use a crisp goal and check-ins so the run stays aligned.',
-  },
-}
-
-const publishPaths = [
-  {
-    name: 'Local first',
-    icon: TerminalSquare,
-    steps: ['Run the app locally', 'Build production assets', 'Open the generated output', 'Fix visible gaps'],
-    prompt:
-      'Run the production build, preview it locally, and inspect the rendered page on desktop and mobile before calling it ready.',
-  },
-  {
-    name: 'GitHub route',
-    icon: GitBranch,
-    steps: ['Initialize Git', 'Commit a clean state', 'Push to GitHub', 'Connect the repo to a host'],
-    prompt:
-      'Prepare this repo for GitHub. Create a concise README, verify git status, suggest a commit message, and explain the safest push flow.',
-  },
-  {
-    name: 'Hosted preview',
-    icon: Rocket,
-    steps: ['Choose Vercel, Netlify, GitHub Pages, or your host', 'Set build command', 'Check preview URL', 'Record rollback steps'],
-    prompt:
-      'Deploy this static site to the configured host. Confirm the live URL renders the current build and compare it with the local preview.',
-  },
-]
-
-const advancedMoves = [
-  {
-    title: 'AGENTS.md as project memory',
-    body: 'Put durable repo rules where Codex automatically reads them: commands, conventions, constraints, review expectations, and what “done” means.',
-  },
-  {
-    title: 'Worktrees for parallel attempts',
-    body: 'Use a worktree when Codex should try an idea without touching your foreground checkout, or when two threads should work side by side.',
-  },
-  {
-    title: 'Goal mode for long tasks',
-    body: 'Use /goal when the objective will take many turns and needs persistent completion criteria. Use /plan first if the goal is fuzzy.',
-  },
-  {
-    title: 'Audit loops',
-    body: 'After a run, ask Codex to audit the result against the original request, rendered output, tests, and repo cleanliness.',
-  },
-]
+type ModalImage = { src: string; alt: string } | null
 
 function App() {
-  const [activeTrack, setActiveTrack] = useState<TrackId>('beginner')
-  const [activePrompt, setActivePrompt] = useState<PromptId>('learn')
+  const [activeChapter, setActiveChapter] = useState<ChapterId>('start')
+  const [activeSetup, setActiveSetup] = useState(setupSteps[0].id)
+  const [completedSetup, setCompletedSetup] = useState<string[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('codex-guide-setup') ?? '[]') as string[]
+    } catch {
+      return []
+    }
+  })
+  const [activeTour, setActiveTour] = useState(tourShots[0].id)
+  const [activeSettings, setActiveSettings] = useState(settingsPanels[0].id)
+  const [activeTool, setActiveTool] = useState(toolPanels[0].id)
+  const [promptCategory, setPromptCategory] = useState<PromptCategory>('all')
+  const [promptSearch, setPromptSearch] = useState('')
+  const [expandedPrompt, setExpandedPrompt] = useState(promptLibrary[0].id)
   const [activeEffort, setActiveEffort] = useState<EffortId>('medium')
+  const [activeTrack, setActiveTrack] = useState(learningTracks[0].label)
   const [copied, setCopied] = useState<string | null>(null)
-  const [checkedSteps, setCheckedSteps] = useState(() => new Set<number>())
+  const [mobileRailOpen, setMobileRailOpen] = useState(false)
+  const [modalImage, setModalImage] = useState<ModalImage>(null)
 
-  const prompt = promptExamples[activePrompt]
-  const EffortIcon = activeEffort === 'extra-high' ? Bot : activeEffort === 'high' ? ShieldCheck : activeEffort === 'medium' ? Code2 : Play
+  const setup = setupSteps.find((step) => step.id === activeSetup) ?? setupSteps[0]
+  const tour = tourShots.find((shot) => shot.id === activeTour) ?? tourShots[0]
+  const settings = settingsPanels.find((panel) => panel.id === activeSettings) ?? settingsPanels[0]
+  const tool = toolPanels.find((panel) => panel.id === activeTool) ?? toolPanels[0]
+  const track = learningTracks.find((item) => item.label === activeTrack) ?? learningTracks[0]
+  const progress = Math.round((completedSetup.length / setupSteps.length) * 100)
 
-  const generatedPrompt = useMemo(() => {
-    return [
-      'Goal: Build the smallest useful change first.',
-      'Context: Read the relevant files before editing; ask if the repo structure is unclear.',
-      'Constraints: Keep existing design patterns, avoid unrelated refactors, and preserve user changes.',
-      'Done when: The app builds, the result is visibly checked, the diff is reviewed, and the repo is ready to commit.',
-    ].join('\n')
+  const visiblePrompts = useMemo(() => {
+    const query = promptSearch.trim().toLowerCase()
+    return promptLibrary.filter((prompt) => {
+      const matchesCategory = promptCategory === 'all' || prompt.category === promptCategory
+      const matchesSearch =
+        !query ||
+        `${prompt.title} ${prompt.summary} ${prompt.category} ${prompt.level}`.toLowerCase().includes(query)
+      return matchesCategory && matchesSearch
+    })
+  }, [promptCategory, promptSearch])
+
+  useEffect(() => {
+    localStorage.setItem('codex-guide-setup', JSON.stringify(completedSetup))
+  }, [completedSetup])
+
+  useEffect(() => {
+    const sections = chapters
+      .map(({ id }) => document.getElementById(id))
+      .filter((section): section is HTMLElement => Boolean(section))
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const nearest = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0]
+        if (nearest) setActiveChapter(nearest.target.id as ChapterId)
+      },
+      { rootMargin: '-16% 0px -66% 0px', threshold: [0, 0.2, 0.5] },
+    )
+    sections.forEach((section) => observer.observe(section))
+    return () => observer.disconnect()
+  }, [])
+
+  useEffect(() => {
+    const revealItems = document.querySelectorAll('[data-reveal]')
+    const observer = new IntersectionObserver(
+      (entries) => entries.forEach((entry) => entry.isIntersecting && entry.target.classList.add('is-visible')),
+      { threshold: 0.08 },
+    )
+    revealItems.forEach((item) => observer.observe(item))
+    return () => observer.disconnect()
+  }, [])
+
+  useEffect(() => {
+    function closeModal(event: KeyboardEvent) {
+      if (event.key === 'Escape') setModalImage(null)
+    }
+    window.addEventListener('keydown', closeModal)
+    return () => window.removeEventListener('keydown', closeModal)
   }, [])
 
   async function copyText(id: string, value: string) {
@@ -326,375 +129,542 @@ function App() {
     }
   }
 
-  function toggleStep(index: number) {
-    setCheckedSteps((current) => {
-      const next = new Set(current)
-      if (next.has(index)) {
-        next.delete(index)
-      } else {
-        next.add(index)
-      }
-      return next
-    })
+  function toggleSetup(id: string) {
+    setCompletedSetup((current) =>
+      current.includes(id) ? current.filter((item) => item !== id) : [...current, id],
+    )
+  }
+
+  function scrollToChapter(id: ChapterId) {
+    setActiveChapter(id)
+    setMobileRailOpen(false)
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  function jumpToPrompts() {
+    setPromptCategory('all')
+    scrollToChapter('prompts')
   }
 
   return (
-    <main className="app-shell">
-      <aside className="side-rail" aria-label="Guide sections">
-        <a className="brand-mark" href="#start" aria-label="Codex Field Guide home">
-          <span>CF</span>
-        </a>
+    <div className="guide-shell">
+      <header className="topbar">
+        <button className="mobile-menu" type="button" onClick={() => setMobileRailOpen((open) => !open)}>
+          <Menu aria-hidden="true" />
+          <span className="sr-only">Open chapter navigation</span>
+        </button>
+        <button className="top-brand" type="button" onClick={() => scrollToChapter('start')}>
+          <BookOpen aria-hidden="true" />
+          <span>
+            <strong>Codex Field Guide</strong>
+            <small>Learn by doing. Ship with confidence.</small>
+          </span>
+        </button>
+        <button className="top-search" type="button" onClick={jumpToPrompts}>
+          <Search aria-hidden="true" />
+          <span>Search prompts and ideas</span>
+          <kbd>⌘ K</kbd>
+        </button>
+        <div className="top-progress" aria-label={`${progress}% setup progress`}>
+          <span>Your setup</span>
+          <div>
+            <i style={{ width: `${progress}%` }} />
+          </div>
+          <strong>{progress}%</strong>
+        </div>
+        <button className="primary-button compact" type="button" onClick={() => scrollToChapter('start')}>
+          Start setup <ArrowRight aria-hidden="true" />
+        </button>
+      </header>
+
+      <aside className={`chapter-rail ${mobileRailOpen ? 'is-open' : ''}`} aria-label="Learning chapters">
+        <div className="rail-heading">
+          <span>Chapters</span>
+          <button type="button" onClick={() => setMobileRailOpen(false)}>
+            <X aria-hidden="true" />
+            <span className="sr-only">Close chapter navigation</span>
+          </button>
+        </div>
         <nav>
-          {navItems.map(([label, id]) => (
-            <a href={`#${id}`} key={id}>
-              {label}
-            </a>
+          {chapters.map((chapter, index) => (
+            <button
+              className={activeChapter === chapter.id ? 'is-active' : ''}
+              type="button"
+              key={chapter.id}
+              onClick={() => scrollToChapter(chapter.id)}
+            >
+              <span className="chapter-index">{index + 1}</span>
+              <span>
+                <strong>{chapter.label}</strong>
+                <small>{chapter.eyebrow}</small>
+              </span>
+              {index === 0 && completedSetup.length === setupSteps.length ? (
+                <CheckCircle2 className="chapter-check" aria-hidden="true" />
+              ) : null}
+            </button>
           ))}
         </nav>
-        <a className="rail-source" href="https://developers.openai.com/codex/codex-manual.md" target="_blank" rel="noreferrer">
-          Sources
-        </a>
+        <div className="rail-help">
+          <Sparkles aria-hidden="true" />
+          <strong>One calm hour</strong>
+          <p>Begin with setup. Open the deeper chapters only when they become useful.</p>
+        </div>
       </aside>
 
-      <section className="hero-section" id="start">
-        <div className="hero-copy">
-          <h1>Codex Field Guide</h1>
-          <p className="hero-lede">
-            Learn the OpenAI Codex app by shipping one careful step at a time: prompts, Computer Use, skills, plugins,
-            repos, commits, publishing, model effort, and the small habits that make agentic coding feel calm.
-          </p>
-          <div className="hero-actions">
-            <a className="primary-action" href="#first-run">
-              Start the first run <ArrowRight aria-hidden="true" />
-            </a>
-            <button type="button" className="quiet-action" onClick={() => copyText('builder', generatedPrompt)}>
-              <Clipboard aria-hidden="true" /> {copied === 'builder' ? 'Copied' : 'Copy starter frame'}
-            </button>
-          </div>
-        </div>
-
-        <div className="learning-map" aria-label="Codex learning map">
-          <div className="map-header">
-            <span>Learning map</span>
-            <div className="map-dots" aria-hidden="true">
-              <i />
-              <i />
-              <i />
+      <main className="guide-main">
+        <section className="chapter-section start-section" id="start">
+          <div className="hero-copy" data-reveal>
+            <p className="eyebrow">Beginner path · about one hour</p>
+            <h1>Start with one calm hour.</h1>
+            <p className="hero-lede">
+              Set up the Codex app, create your first project, and send one safe prompt. The rest of the guide will
+              wait until you need it.
+            </p>
+            <div className="hero-meta">
+              <span><CheckCircle2 aria-hidden="true" /> No coding-agent experience needed</span>
+              <span><ShieldCheck aria-hidden="true" /> Source-backed guidance</span>
             </div>
           </div>
-          <div className="map-grid">
-            {Object.entries(tracks).map(([id, track], index) => (
-              <button
-                key={id}
-                type="button"
-                className={`map-card ${activeTrack === id ? 'is-active' : ''}`}
-                onClick={() => setActiveTrack(id as TrackId)}
-              >
-                <span>{String(index + 1).padStart(2, '0')}</span>
-                <strong>{track.name}</strong>
-                <small>{track.title}</small>
+
+          <div className="setup-workbench" data-reveal>
+            <div className="setup-stepper">
+              <div className="workbench-heading">
+                <span>Setup path</span>
+                <strong>{completedSetup.length} of {setupSteps.length} complete</strong>
+              </div>
+              {setupSteps.map((step, index) => {
+                const isDone = completedSetup.includes(step.id)
+                return (
+                  <button
+                    className={`setup-step ${activeSetup === step.id ? 'is-active' : ''} ${isDone ? 'is-done' : ''}`}
+                    type="button"
+                    key={step.id}
+                    onClick={() => setActiveSetup(step.id)}
+                  >
+                    <span className="step-number">{isDone ? <Check aria-hidden="true" /> : index + 1}</span>
+                    <span>
+                      <strong>{step.title}</strong>
+                      <small>{step.short}</small>
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+            <article className="setup-lesson">
+              <div className="lesson-copy">
+                <p className="eyebrow">Step {setupSteps.findIndex((step) => step.id === setup.id) + 1}</p>
+                <h2>{setup.title}</h2>
+                <p>{setup.body}</p>
+                <aside><Sparkles aria-hidden="true" /> {setup.note}</aside>
+                {setup.prompt ? (
+                  <div className="inline-prompt">
+                    <code>{setup.prompt}</code>
+                    <button type="button" onClick={() => copyText('first-prompt', setup.prompt ?? '')}>
+                      <Clipboard aria-hidden="true" />
+                      {copied === 'first-prompt' ? 'Copied' : 'Copy'}
+                    </button>
+                  </div>
+                ) : null}
+                <div className="lesson-actions">
+                  <button className="primary-button" type="button" onClick={() => toggleSetup(setup.id)}>
+                    {completedSetup.includes(setup.id) ? <Check aria-hidden="true" /> : <ChevronRight aria-hidden="true" />}
+                    {completedSetup.includes(setup.id) ? 'Marked complete' : 'Mark this complete'}
+                  </button>
+                  <a className="text-link" href={setup.docs} target="_blank" rel="noreferrer">
+                    {setup.action} <ExternalLink aria-hidden="true" />
+                  </a>
+                </div>
+              </div>
+              <ScreenshotFigure
+                src={setup.image}
+                alt={setup.imageAlt}
+                caption={setup.source}
+                docs={setup.docs}
+                onZoom={() => setModalImage({ src: setup.image, alt: setup.imageAlt })}
+              />
+            </article>
+          </div>
+
+          <div className="lesson-strip" data-reveal>
+            {[
+              ['Interface tour', 'Know where everything lives', 'interface', PanelLeft],
+              ['Settings studio', 'Tune modes and permissions', 'settings', Settings2],
+              ['Tool chooser', 'Use the smallest capable surface', 'tools', WandSparkles],
+              ['Prompt library', 'Try an idea that feels fun', 'prompts', BookOpen],
+            ].map(([label, body, id, Icon]) => (
+              <button type="button" key={id as string} onClick={() => scrollToChapter(id as ChapterId)}>
+                <Icon aria-hidden="true" />
+                <span><strong>{label as string}</strong><small>{body as string}</small></span>
+                <ArrowRight aria-hidden="true" />
               </button>
             ))}
           </div>
-          <div className="track-panel">
-            <div>
-              <p>{tracks[activeTrack].name} track</p>
-              <h2>{tracks[activeTrack].title}</h2>
-              <span>{tracks[activeTrack].description}</span>
-            </div>
-            <ul>
-              {tracks[activeTrack].actions.map((item) => (
-                <li key={item}>
-                  <Check aria-hidden="true" />
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </section>
+        </section>
 
-      <section className="proof-strip" aria-label="What this guide covers">
-        {[
-          ['Beginner safe', 'No assumed coding-agent experience'],
-          ['Source-backed', 'Based on current Codex docs'],
-          ['Hands-on', 'Prompts, checklists, and workflows'],
-          ['Scalable', 'Intermediate and advanced sections included'],
-        ].map(([label, value]) => (
-          <div key={label}>
-            <strong>{label}</strong>
-            <span>{value}</span>
-          </div>
-        ))}
-      </section>
-
-      <section className="section-block first-run" id="first-run">
-        <div className="section-heading">
-          <p className="plain-label">First Run</p>
-          <h2>Your first useful Codex loop</h2>
-          <span>
-            The beginner loop is not “ask for magic.” It is context, one scoped change, visible proof, review, then
-            commit.
-          </span>
-        </div>
-        <div className="run-layout">
-          <div className="checklist-panel">
-            {firstRunSteps.map((step, index) => (
-              <button
-                type="button"
-                className={`check-row ${checkedSteps.has(index) ? 'is-done' : ''}`}
-                key={step.title}
-                onClick={() => toggleStep(index)}
-              >
-                <span className="check-index">{checkedSteps.has(index) ? <Check aria-hidden="true" /> : index + 1}</span>
-                <span>
-                  <strong>{step.title}</strong>
-                  <small>{step.body}</small>
-                </span>
-              </button>
-            ))}
-          </div>
-          <div className="prompt-stack">
-            {firstRunSteps.map((step, index) => (
-              <article className="mini-prompt" key={step.prompt}>
-                <span>Prompt {index + 1}</span>
-                <p>{step.prompt}</p>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="section-block prompt-lab" id="prompt-lab">
-        <div className="section-heading">
-          <p className="plain-label">Prompt Lab</p>
-          <h2>Prompts that tell Codex what good looks like</h2>
-          <span>
-            Strong prompts give Codex context and a verification target. Use these as starting points, then add your
-            repo-specific details.
-          </span>
-        </div>
-        <div className="prompt-lab-grid">
-          <div className="prompt-tabs" role="tablist" aria-label="Prompt examples">
-            {Object.entries(promptExamples).map(([id, item]) => {
-              const Icon = item.icon
-              return (
+        <section className="chapter-section" id="interface">
+          <SectionHeading
+            eyebrow="Chapter 2 · Interface tour"
+            title="Projects, threads, and modes without the mystery."
+            body="You only need a few ideas to feel at home. Explore one screenshot at a time, then move on when the workspace makes sense."
+          />
+          <div className="media-lesson" data-reveal>
+            <div className="vertical-tabs" role="tablist" aria-label="Codex interface topics">
+              {tourShots.map((shot) => (
                 <button
                   type="button"
                   role="tab"
-                  aria-selected={activePrompt === id}
-                  className={activePrompt === id ? 'is-selected' : ''}
-                  onClick={() => setActivePrompt(id as PromptId)}
-                  key={id}
+                  aria-selected={activeTour === shot.id}
+                  className={activeTour === shot.id ? 'is-selected' : ''}
+                  key={shot.id}
+                  onClick={() => setActiveTour(shot.id)}
                 >
-                  <Icon aria-hidden="true" />
-                  <span>{item.label}</span>
+                  <span>{shot.label}</span>
+                  <ChevronRight aria-hidden="true" />
                 </button>
-              )
-            })}
-          </div>
-          <article className="large-prompt-card">
-            <div>
-              <p>{prompt.summary}</p>
-              <h3>{prompt.label} prompt</h3>
+              ))}
             </div>
-            <pre>{prompt.prompt}</pre>
-            <button type="button" onClick={() => copyText(activePrompt, prompt.prompt)}>
-              <Clipboard aria-hidden="true" /> {copied === activePrompt ? 'Copied' : 'Copy prompt'}
-            </button>
-          </article>
-          <article className="prompt-builder">
-            <h3>Starter prompt frame</h3>
-            <p>Use this four-part shape when you are unsure how to ask.</p>
-            <pre>{generatedPrompt}</pre>
-          </article>
-        </div>
-      </section>
-
-      <section className="section-block tools-section" id="tools">
-        <div className="section-heading">
-          <p className="plain-label">Tools</p>
-          <h2>Pick the smallest capable surface</h2>
-          <span>
-            Codex can read files, run commands, use browsers, operate desktop apps, and connect to external services.
-            The trick is choosing the narrowest tool that proves the result.
-          </span>
-        </div>
-        <div className="tool-grid">
-          {tools.map((tool) => {
-            const Icon = tool.icon
-            return (
-              <article className="tool-card" key={tool.name}>
-                <div className="tool-title">
-                  <Icon aria-hidden="true" />
-                  <h3>{tool.name}</h3>
-                </div>
-                <dl>
-                  <div>
-                    <dt>Best for</dt>
-                    <dd>{tool.bestFor}</dd>
-                  </div>
-                  <div>
-                    <dt>Use when</dt>
-                    <dd>{tool.useWhen}</dd>
-                  </div>
-                  <div>
-                    <dt>Avoid when</dt>
-                    <dd>{tool.avoidWhen}</dd>
-                  </div>
-                </dl>
-              </article>
-            )
-          })}
-        </div>
-        <div className="computer-use-band">
-          <div>
-            <MousePointerClick aria-hidden="true" />
-            <h3>Computer Use safety recipe</h3>
+            <article className="lesson-detail">
+              <p className="eyebrow">{tour.label}</p>
+              <h3>{tour.title}</h3>
+              <p>{tour.body}</p>
+              <a className="text-link" href={tour.docs} target="_blank" rel="noreferrer">
+                Open official docs <ExternalLink aria-hidden="true" />
+              </a>
+            </article>
+            <ScreenshotFigure
+              src={tour.image}
+              alt={tour.imageAlt}
+              caption="Official Codex screenshot"
+              docs={tour.docs}
+              onZoom={() => setModalImage({ src: tour.image, alt: tour.imageAlt })}
+            />
           </div>
-          <ol>
-            <li>Name one app or flow.</li>
-            <li>Keep sensitive windows closed unless required.</li>
-            <li>Review permission prompts before allowing access.</li>
-            <li>Cancel immediately if Codex moves to the wrong window.</li>
-          </ol>
-        </div>
-      </section>
+        </section>
 
-      <section className="section-block model-section" id="models">
-        <div className="section-heading">
-          <p className="plain-label">Models</p>
-          <h2>When to use Low, Medium, High, and Extra High</h2>
-          <span>
-            Effort is a trade-off between speed and depth. Start balanced, then raise effort when the task gets more
-            ambiguous, multi-step, or risky.
-          </span>
-        </div>
-        <div className="effort-layout">
-          <div className="effort-selector" role="tablist" aria-label="Reasoning effort">
-            {(Object.keys(efforts) as EffortId[]).map((id) => (
+        <section className="chapter-section soft-section" id="settings">
+          <SectionHeading
+            eyebrow="Chapter 3 · Settings studio"
+            title="Configure the app in small, useful passes."
+            body="Open Settings with Command-comma. Beginners can leave most defaults alone; the important part is knowing where permissions and integrations live."
+          />
+          <div className="horizontal-tabs" role="tablist" aria-label="Settings topics">
+            {settingsPanels.map((panel) => (
               <button
                 type="button"
                 role="tab"
-                aria-selected={activeEffort === id}
-                className={activeEffort === id ? 'is-selected' : ''}
-                onClick={() => setActiveEffort(id)}
-                key={id}
+                aria-selected={activeSettings === panel.id}
+                className={activeSettings === panel.id ? 'is-selected' : ''}
+                key={panel.id}
+                onClick={() => setActiveSettings(panel.id)}
               >
-                {efforts[id].label}
+                {panel.label}
               </button>
             ))}
           </div>
-          <article className="effort-card">
-            <EffortIcon aria-hidden="true" />
-            <div>
-              <span>{efforts[activeEffort].speed}</span>
-              <h3>{efforts[activeEffort].useFor}</h3>
-              <ul>
-                {efforts[activeEffort].examples.map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
+          <div className="settings-grid" data-reveal>
+            <article className="lesson-detail settings-copy">
+              <p className="eyebrow">{settings.label}</p>
+              <h3>{settings.title}</h3>
+              <p>{settings.body}</p>
+              <ul className="check-list">
+                {settings.bullets.map((bullet) => <li key={bullet}><Check aria-hidden="true" /> {bullet}</li>)}
               </ul>
-              <p>{efforts[activeEffort].caution}</p>
-            </div>
-          </article>
-          <div className="model-note">
-            <strong>Practical default:</strong> use the recommended Codex model for most work, choose mini or faster
-            models for lightweight scans, and save the deepest effort for long agentic tasks that need planning,
-            implementation, verification, and audit.
-          </div>
-        </div>
-      </section>
-
-      <section className="section-block publish-section" id="publish">
-        <div className="section-heading">
-          <p className="plain-label">Publish</p>
-          <h2>From local folder to shareable URL</h2>
-          <span>
-            Publishing is mostly a proof chain: build locally, commit a clean state, push or connect the repo, then
-            compare the deployed site with the build you verified.
-          </span>
-        </div>
-        <div className="publish-grid">
-          {publishPaths.map((path) => {
-            const Icon = path.icon
-            return (
-              <article className="publish-card" key={path.name}>
-                <Icon aria-hidden="true" />
-                <h3>{path.name}</h3>
-                <ul>
-                  {path.steps.map((step) => (
-                    <li key={step}>
-                      <ChevronRight aria-hidden="true" />
-                      {step}
-                    </li>
-                  ))}
-                </ul>
-                <pre>{path.prompt}</pre>
-              </article>
-            )
-          })}
-        </div>
-      </section>
-
-      <section className="section-block advanced-section" id="advanced">
-        <div className="section-heading">
-          <p className="plain-label">Advanced</p>
-          <h2>The operating system around Codex</h2>
-          <span>
-            Advanced Codex use is less about clever prompts and more about durable instructions, isolated branches,
-            specialized skills, connected tools, and honest completion audits.
-          </span>
-        </div>
-        <div className="advanced-grid">
-          {advancedMoves.map((move, index) => (
-            <article className="advanced-card" key={move.title}>
-              <span>{String(index + 1).padStart(2, '0')}</span>
-              <h3>{move.title}</h3>
-              <p>{move.body}</p>
+              <a className="text-link" href={settings.docs} target="_blank" rel="noreferrer">
+                Open official docs <ExternalLink aria-hidden="true" />
+              </a>
             </article>
-          ))}
-        </div>
-        <div className="cheat-sheet">
-          <div>
-            <h3>One prompt to end every serious run</h3>
-            <p>
-              Ask Codex to audit the result against the original request, source docs, tests, rendered behavior, and
-              repo cleanliness before it says done.
-            </p>
+            <ScreenshotFigure
+              src={settings.image}
+              alt={settings.imageAlt}
+              caption="Official Codex screenshot"
+              docs={settings.docs}
+              onZoom={() => setModalImage({ src: settings.image, alt: settings.imageAlt })}
+            />
           </div>
-          <button
-            type="button"
-            onClick={() =>
-              copyText(
-                'audit',
-                'Audit this run against the original request. Verify each requirement with current evidence: files changed, tests or build output, rendered UI behavior, source docs used, git status, and any remaining gaps. Fix what you can before final handoff.',
-              )
-            }
-          >
-            <Clipboard aria-hidden="true" /> {copied === 'audit' ? 'Copied' : 'Copy audit prompt'}
-          </button>
-        </div>
-      </section>
+        </section>
 
-      <section className="source-section" aria-label="Official sources">
-        <div>
-          <p className="plain-label">Sources</p>
-          <h2>Built from the current Codex manual</h2>
-          <p>
-            Product details change, so this guide links back to official OpenAI Codex documentation for the facts that
-            should stay current.
-          </p>
-        </div>
-        <div className="source-links">
-          {sourceLinks.map(([label, href]) => (
-            <a href={href} target="_blank" rel="noreferrer" key={href}>
-              {label}
+        <section className="chapter-section" id="tools">
+          <SectionHeading
+            eyebrow="Chapter 4 · Tools and skills"
+            title="Pick the smallest capable surface."
+            body="Codex can read files, run commands, browse local pages, operate desktop apps, and connect to external services. The useful habit is choosing the tool that proves the result with the least fuss."
+          />
+          <div className="tool-layout" data-reveal>
+            <div className="tool-chooser">
+              {toolPanels.map((panel) => (
+                <button
+                  className={activeTool === panel.id ? 'is-selected' : ''}
+                  type="button"
+                  key={panel.id}
+                  onClick={() => setActiveTool(panel.id)}
+                >
+                  <span>{panel.label}</span>
+                  <small>{panel.verdict}</small>
+                  <ChevronRight aria-hidden="true" />
+                </button>
+              ))}
+            </div>
+            <article className="tool-detail">
+              <p className="eyebrow">{tool.verdict}</p>
+              <h3>{tool.title}</h3>
+              <p>{tool.body}</p>
+              <dl>
+                <div><dt>Best for</dt><dd>{tool.best}</dd></div>
+                <div><dt>Switch when</dt><dd>{tool.switchWhen}</dd></div>
+              </dl>
+              <a className="text-link" href={tool.docs} target="_blank" rel="noreferrer">
+                Read official guide <ExternalLink aria-hidden="true" />
+              </a>
+            </article>
+            <ScreenshotFigure
+              src={tool.image}
+              alt={tool.imageAlt}
+              caption="Official Codex screenshot"
+              docs={tool.docs}
+              onZoom={() => setModalImage({ src: tool.image, alt: tool.imageAlt })}
+            />
+          </div>
+          <div className="safety-band" data-reveal>
+            <MousePointerClick aria-hidden="true" />
+            <div>
+              <h3>Computer Use safety recipe</h3>
+              <p>Close sensitive windows, name one app or flow, read approvals, and stop immediately if the task wanders.</p>
+            </div>
+            <a href="https://developers.openai.com/codex/app/computer-use" target="_blank" rel="noreferrer">
+              Review permissions <ExternalLink aria-hidden="true" />
             </a>
-          ))}
+          </div>
+        </section>
+
+        <section className="chapter-section prompt-section soft-section" id="prompts">
+          <SectionHeading
+            eyebrow="Chapter 5 · Prompt library"
+            title="Start from an idea that feels worth making."
+            body="These prompts are intentionally concrete. Copy one, personalize it, and let Codex show you the steps as it works."
+          />
+          <div className="illustration-frame" data-reveal>
+            <img src="/images/generated/build-possibilities-infographic.png" alt="Illustrated examples of a website, mobile app, platform game, data dashboard, and research brief" />
+            <div>
+              <strong>What can Codex help you build?</strong>
+              <span>Websites, apps, games, reports, dashboards, and the workflows around them.</span>
+            </div>
+          </div>
+          <div className="prompt-controls" data-reveal>
+            <div className="prompt-filter" role="tablist" aria-label="Prompt categories">
+              {promptCategories.map((category) => (
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={promptCategory === category.id}
+                  className={promptCategory === category.id ? 'is-selected' : ''}
+                  onClick={() => setPromptCategory(category.id)}
+                  key={category.id}
+                >
+                  {category.label}
+                </button>
+              ))}
+            </div>
+            <label className="prompt-search">
+              <Search aria-hidden="true" />
+              <input value={promptSearch} onChange={(event) => setPromptSearch(event.target.value)} placeholder="Search prompt ideas" />
+            </label>
+          </div>
+          <div className="prompt-list">
+            {visiblePrompts.map((prompt) => (
+              <article className={`prompt-item ${expandedPrompt === prompt.id ? 'is-open' : ''}`} key={prompt.id}>
+                <button className="prompt-item-heading" type="button" onClick={() => setExpandedPrompt(prompt.id)}>
+                  <span className="prompt-kind">{prompt.category}</span>
+                  <span>
+                    <strong>{prompt.title}</strong>
+                    <small>{prompt.summary}</small>
+                  </span>
+                  <em>{prompt.level}</em>
+                  <ChevronRight aria-hidden="true" />
+                </button>
+                {expandedPrompt === prompt.id ? (
+                  <div className="prompt-item-body">
+                    <pre>{prompt.prompt}</pre>
+                    <button type="button" onClick={() => copyText(prompt.id, prompt.prompt)}>
+                      <Clipboard aria-hidden="true" /> {copied === prompt.id ? 'Copied' : 'Copy prompt'}
+                    </button>
+                  </div>
+                ) : null}
+              </article>
+            ))}
+            {visiblePrompts.length === 0 ? <p className="empty-message">No prompt ideas match that search yet.</p> : null}
+          </div>
+        </section>
+
+        <section className="chapter-section" id="ship">
+          <SectionHeading
+            eyebrow="Chapter 6 · Repos, commits, and publishing"
+            title="Move from a local folder to a shareable URL."
+            body="Git and GitHub are useful, but they are not a toll gate. Learn the local loop first, make clean commits, then publish when sharing or backup becomes valuable."
+          />
+          <div className="shipping-layout" data-reveal>
+            <div className="shipping-steps">
+              {shippingSteps.map((step) => (
+                <article key={step.title}>
+                  <h3>{step.title}</h3>
+                  <p>{step.body}</p>
+                  <button type="button" onClick={() => copyText(step.title, step.prompt)}>
+                    <Clipboard aria-hidden="true" /> {copied === step.title ? 'Copied' : 'Copy helper prompt'}
+                  </button>
+                </article>
+              ))}
+            </div>
+            <div className="ship-aside">
+              <ScreenshotFigure
+                src="/images/official/git-commit-light.webp"
+                alt="Official Codex screenshot showing Git commit creation"
+                caption="Official Codex screenshot"
+                docs="https://developers.openai.com/codex/app/review"
+                onZoom={() => setModalImage({ src: '/images/official/git-commit-light.webp', alt: 'Official Codex screenshot showing Git commit creation' })}
+              />
+              <div className="ship-note">
+                <GitBranch aria-hidden="true" />
+                <h3>The plain-English Git loop</h3>
+                <ol>
+                  <li>Check what changed.</li>
+                  <li>Run the app or the relevant test.</li>
+                  <li>Commit one coherent result.</li>
+                  <li>Push when you want backup or collaboration.</li>
+                </ol>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="chapter-section level-section soft-section" id="level-up">
+          <SectionHeading
+            eyebrow="Chapter 7 · Level up"
+            title="Use more intelligence when the work earns it."
+            body="Model lists evolve. This practical effort guide focuses on the stable decision: how much thinking does the task deserve?"
+          />
+          <div className="effort-grid" data-reveal>
+            <div className="effort-tabs" role="tablist" aria-label="Reasoning effort">
+              {(Object.keys(efforts) as EffortId[]).map((id) => (
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={activeEffort === id}
+                  className={activeEffort === id ? 'is-selected' : ''}
+                  key={id}
+                  onClick={() => setActiveEffort(id)}
+                >
+                  {efforts[id].label}
+                </button>
+              ))}
+            </div>
+            <article className="effort-detail">
+              <Bot aria-hidden="true" />
+              <p className="eyebrow">{efforts[activeEffort].temperature}</p>
+              <h3>{efforts[activeEffort].best}</h3>
+              <ul>
+                {efforts[activeEffort].examples.map((example) => <li key={example}>{example}</li>)}
+              </ul>
+              <p>{efforts[activeEffort].note}</p>
+              <a className="text-link" href="https://developers.openai.com/codex/models" target="_blank" rel="noreferrer">
+                See current model docs <ExternalLink aria-hidden="true" />
+              </a>
+            </article>
+          </div>
+          <div className="track-panel" data-reveal>
+            <div className="track-tabs" role="tablist" aria-label="Learning tracks">
+              {learningTracks.map((item) => (
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTrack === item.label}
+                  className={activeTrack === item.label ? 'is-selected' : ''}
+                  onClick={() => setActiveTrack(item.label)}
+                  key={item.label}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+            <article>
+              <p className="eyebrow">{track.label} path</p>
+              <h3>{track.title}</h3>
+              <p>{track.body}</p>
+            </article>
+            <div className="advanced-links">
+              {[
+                ['AGENTS.md', 'Durable repo instructions', 'https://developers.openai.com/codex/guides/agents-md'],
+                ['Worktrees', 'Parallel isolated attempts', 'https://developers.openai.com/codex/app/worktrees'],
+                ['MCP', 'Structured external tools', 'https://developers.openai.com/codex/mcp'],
+                ['Review pane', 'Line-level feedback', 'https://developers.openai.com/codex/app/review'],
+              ].map(([label, body, href]) => (
+                <a href={href} target="_blank" rel="noreferrer" key={label}>
+                  <strong>{label}</strong><small>{body}</small><ExternalLink aria-hidden="true" />
+                </a>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <footer className="source-footer">
+          <div>
+            <p className="eyebrow">Official sources</p>
+            <h2>Keep learning from the live Codex docs.</h2>
+            <p>Product details can change. These links open the current official OpenAI documentation in a new tab.</p>
+          </div>
+          <div className="source-links">
+            {sourceLinks.map(([label, href]) => (
+              <a href={href} target="_blank" rel="noreferrer" key={href}>{label}<ExternalLink aria-hidden="true" /></a>
+            ))}
+          </div>
+        </footer>
+      </main>
+
+      {modalImage ? (
+        <div className="image-modal" role="dialog" aria-modal="true" aria-label="Expanded guide image">
+          <button type="button" onClick={() => setModalImage(null)}>
+            <X aria-hidden="true" />
+            <span className="sr-only">Close expanded image</span>
+          </button>
+          <img src={modalImage.src} alt={modalImage.alt} />
         </div>
-      </section>
-    </main>
+      ) : null}
+    </div>
+  )
+}
+
+function SectionHeading({ eyebrow, title, body }: { eyebrow: string; title: string; body: string }) {
+  return (
+    <div className="section-heading" data-reveal>
+      <p className="eyebrow">{eyebrow}</p>
+      <h2>{title}</h2>
+      <p>{body}</p>
+    </div>
+  )
+}
+
+function ScreenshotFigure({
+  src,
+  alt,
+  caption,
+  docs,
+  onZoom,
+}: {
+  src: string
+  alt: string
+  caption: string
+  docs: string
+  onZoom: () => void
+}) {
+  return (
+    <figure className="screenshot-figure">
+      <button className="screenshot-button" type="button" onClick={onZoom} aria-label={`Expand image: ${alt}`}>
+        <img src={src} alt={alt} />
+        <span><Maximize2 aria-hidden="true" /> Expand</span>
+      </button>
+      <figcaption>
+        <span>{caption}</span>
+        <a href={docs} target="_blank" rel="noreferrer">Open source <ExternalLink aria-hidden="true" /></a>
+      </figcaption>
+    </figure>
   )
 }
 
