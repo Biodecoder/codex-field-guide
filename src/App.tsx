@@ -13,11 +13,16 @@ import {
   Menu,
   MousePointerClick,
   PanelLeft,
+  Rocket,
   Search,
   Settings2,
   ShieldCheck,
+  Sprout,
   Sparkles,
+  Upload,
   WandSparkles,
+  Workflow,
+  Wrench,
   X,
 } from 'lucide-react'
 import {
@@ -39,6 +44,14 @@ import {
 import './App.css'
 
 type ModalImage = { src: string; alt: string } | null
+
+const learningMap = [
+  { label: 'Beginner', body: 'Install and start safely', chapter: 'start', icon: Sprout },
+  { label: 'Workflow', body: 'Know your workspace', chapter: 'interface', icon: Workflow },
+  { label: 'Tools', body: 'Choose what helps', chapter: 'tools', icon: Wrench },
+  { label: 'Publish', body: 'Commit and share', chapter: 'ship', icon: Upload },
+  { label: 'Advanced', body: 'Go deeper when ready', chapter: 'level-up', icon: Rocket },
+] satisfies Array<{ label: string; body: string; chapter: ChapterId; icon: typeof Sprout }>
 
 function App() {
   const [activeChapter, setActiveChapter] = useState<ChapterId>('start')
@@ -213,20 +226,50 @@ function App() {
 
       <main className="guide-main">
         <section className="chapter-section start-section" id="start">
-          <div className="hero-copy" data-reveal>
-            <p className="eyebrow">Beginner path · about one hour</p>
-            <h1>Start with one calm hour.</h1>
-            <p className="hero-lede">
-              Set up the Codex app, create your first project, and send one safe prompt. The rest of the guide will
-              wait until you need it.
-            </p>
-            <div className="hero-meta">
-              <span><CheckCircle2 aria-hidden="true" /> No coding-agent experience needed</span>
-              <span><ShieldCheck aria-hidden="true" /> Source-backed guidance</span>
+          <div className="intro-grid">
+            <div className="hero-copy" data-reveal>
+              <p className="eyebrow">Beginner path · about one hour</p>
+              <h1>Start with one calm hour.</h1>
+              <p className="hero-lede">
+                Set up the Codex app, create your first project, and send one safe prompt. The rest of the guide will
+                wait until you need it.
+              </p>
+              <div className="hero-actions">
+                <button
+                  className="primary-button"
+                  type="button"
+                  onClick={() => document.getElementById('setup-workbench')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                >
+                  Begin setup <ArrowRight aria-hidden="true" />
+                </button>
+              </div>
+              <div className="hero-meta">
+                <span><CheckCircle2 aria-hidden="true" /> No coding-agent experience needed</span>
+                <span><ShieldCheck aria-hidden="true" /> Source-backed guidance</span>
+              </div>
             </div>
+
+            <section className="learning-overview" aria-labelledby="learning-map-title" data-reveal>
+              <div className="learning-overview-heading">
+                <div>
+                  <p className="eyebrow">Learning map</p>
+                  <h2 id="learning-map-title">See the path. Take one step.</h2>
+                </div>
+                <span>5 chapters</span>
+              </div>
+              <div className="learning-map-track">
+                {learningMap.map(({ label, body, chapter, icon: Icon }) => (
+                  <button type="button" key={label} onClick={() => scrollToChapter(chapter)}>
+                    <i><Icon aria-hidden="true" /></i>
+                    <strong>{label}</strong>
+                    <small>{body}</small>
+                  </button>
+                ))}
+              </div>
+            </section>
           </div>
 
-          <div className="setup-workbench" data-reveal>
+          <div className="setup-workbench" id="setup-workbench" data-reveal>
             <div className="setup-stepper">
               <div className="workbench-heading">
                 <span>Setup path</span>
