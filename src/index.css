@@ -4,7 +4,7 @@
   --font-ui: "Avenir Next", "Segoe UI", system-ui, sans-serif;
   --font-mono: "SFMono-Regular", "Cascadia Code", "Liberation Mono", Menlo, monospace;
   font-family: var(--font-body);
-  color: #111713;
+  color: #061a38;
   background: #ffffff;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -38,7 +38,7 @@ button {
 
 ::selection {
   color: #ffffff;
-  background: #0f5d4d;
+  background: #1559c8;
 }
 
 @media (prefers-reduced-motion: reduce) {
