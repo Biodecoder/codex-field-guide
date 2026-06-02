@@ -112,6 +112,7 @@ export function SearchPalette({ open, onClose, onNavigate, returnFocusRef }: Sea
               entries={lessonResults}
               allEntries={visibleResults}
               activeIndex={activeIndex}
+              onActivate={setActiveIndex}
               onChoose={choose}
             />
           )}
@@ -121,6 +122,7 @@ export function SearchPalette({ open, onClose, onNavigate, returnFocusRef }: Sea
               entries={promptResults}
               allEntries={visibleResults}
               activeIndex={activeIndex}
+              onActivate={setActiveIndex}
               onChoose={choose}
             />
           )}
@@ -140,12 +142,14 @@ function SearchGroup({
   entries,
   allEntries,
   activeIndex,
+  onActivate,
   onChoose,
 }: {
   title: string
   entries: SearchEntry[]
   allEntries: SearchEntry[]
   activeIndex: number
+  onActivate: (index: number) => void
   onChoose: (entry: SearchEntry) => void
 }) {
   return (
@@ -159,7 +163,7 @@ function SearchGroup({
             className={`search-result ${index === activeIndex ? 'is-active' : ''}`}
             type="button"
             key={entry.id}
-            onMouseEnter={() => undefined}
+            onMouseEnter={() => onActivate(index)}
             onClick={() => onChoose(entry)}
           >
             <span className="result-icon"><Icon size={20} /></span>

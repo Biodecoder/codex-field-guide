@@ -1,7 +1,7 @@
 import { X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
-import { ChapterViews } from './components/ChapterViews'
+import { ChapterViews, type CopyFeedback } from './components/ChapterViews'
 import { GuideShell } from './components/GuideShell'
 import { useOverlayFocus } from './components/useOverlayFocus'
 import { SearchPalette } from './components/SearchPalette'
@@ -24,7 +24,7 @@ function App() {
       return []
     }
   })
-  const [copied, setCopied] = useState<string | null>(null)
+  const [copyFeedback, setCopyFeedback] = useState<CopyFeedback>(null)
   const [mobileRailOpen, setMobileRailOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [modalImage, setModalImage] = useState<ModalImage>(null)
@@ -86,13 +86,35 @@ function App() {
   }
 
   async function copyText(id: string, value: string) {
+    let didCopy = false
+
     try {
-      await navigator.clipboard.writeText(value)
-      setCopied(id)
-      window.setTimeout(() => setCopied(null), 1600)
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(value)
+        didCopy = true
+      }
     } catch {
-      setCopied(null)
+      didCopy = false
     }
+
+    if (!didCopy) {
+      const fallback = document.createElement('textarea')
+      fallback.value = value
+      fallback.setAttribute('readonly', '')
+      fallback.style.position = 'fixed'
+      fallback.style.top = '-1000px'
+      fallback.style.opacity = '0'
+      document.body.appendChild(fallback)
+      fallback.select()
+      fallback.setSelectionRange(0, value.length)
+      didCopy = document.execCommand('copy')
+      fallback.remove()
+    }
+
+    setCopyFeedback({ id, state: didCopy ? 'copied' : 'failed' })
+    window.setTimeout(() => {
+      setCopyFeedback((current) => current?.id === id ? null : current)
+    }, 2200)
   }
 
   function openImage(image: Exclude<ModalImage, null>, trigger: HTMLButtonElement) {
@@ -119,7 +141,7 @@ function App() {
           key={routeToHash(route)}
           route={route}
           completedSetup={completedSetup}
-          copied={copied}
+          copyFeedback={copyFeedback}
           onNavigate={navigate}
           onToggleSetup={toggleSetup}
           onCopy={copyText}

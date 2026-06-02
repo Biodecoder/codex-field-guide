@@ -12,7 +12,7 @@ type TeachingCanvasProps = {
   alt: string
   caption: string
   source?: string
-  hotspots: CanvasHotspot[]
+  hotspots?: CanvasHotspot[]
   onZoom: (trigger: HTMLButtonElement) => void
 }
 
@@ -21,7 +21,7 @@ export function TeachingCanvas({
   alt,
   caption,
   source,
-  hotspots,
+  hotspots = [],
   onZoom,
 }: TeachingCanvasProps) {
   return (
@@ -59,4 +59,3 @@ export function TeachingCanvas({
     </figure>
   )
 }
-

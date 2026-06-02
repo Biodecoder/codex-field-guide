@@ -3,12 +3,15 @@ import {
   Bot,
   Check,
   CheckCircle2,
+  ChevronDown,
   Clipboard,
   ClipboardCheck,
   ExternalLink,
   Eye,
   GitBranch,
   Hand,
+  KeyRound,
+  MessageSquare,
   MonitorCheck,
   MousePointerClick,
   Play,
@@ -38,43 +41,19 @@ import {
   type PromptCategory,
 } from '../content'
 import { type GuideLessonId, type GuideRoute } from '../guide'
-import { TeachingCanvas, type CanvasHotspot } from './TeachingCanvas'
+import { TeachingCanvas } from './TeachingCanvas'
+
+export type CopyFeedback = { id: string; state: 'copied' | 'failed' } | null
 
 type ChapterViewsProps = {
   route: GuideRoute
   completedSetup: string[]
-  copied: string | null
+  copyFeedback: CopyFeedback
   onNavigate: (route: GuideRoute) => void
   onToggleSetup: (id: string) => void
   onCopy: (id: string, value: string) => void
   onZoom: (image: { src: string; alt: string }, trigger: HTMLButtonElement) => void
 }
-
-const setupHotspots: CanvasHotspot[] = [
-  { number: '1', title: 'Install', body: 'Open the desktop app.', position: 'p1' },
-  { number: '2', title: 'Sign in', body: 'Use your usual account.', position: 'p2' },
-  { number: '3', title: 'Add folder', body: 'Choose a safe workspace.', position: 'p3' },
-  { number: '4', title: 'Stay local', body: 'Learn close to your files.', position: 'p4' },
-  { number: '5', title: 'Prompt', body: 'Ask for one visible result.', position: 'p5' },
-]
-
-const interfaceHotspots: CanvasHotspot[] = [
-  { number: '1', title: 'Projects', body: 'Each project points to a folder.', position: 'p1' },
-  { number: '2', title: 'Threads', body: 'Keep one task in each conversation.', position: 'p3' },
-  { number: '3', title: 'Modes', body: 'Begin with Local mode.', position: 'p5' },
-]
-
-const browserHotspots: CanvasHotspot[] = [
-  { number: '1', title: 'Open localhost', body: 'See your local site.', position: 'p1' },
-  { number: '2', title: 'Inspect', body: 'Click the important path.', position: 'p3' },
-  { number: '3', title: 'Verify', body: 'Check phone and desktop.', position: 'p5' },
-]
-
-const publishHotspots: CanvasHotspot[] = [
-  { number: '1', title: 'Review diff', body: 'Understand every change.', position: 'p1' },
-  { number: '2', title: 'Write message', body: 'Describe one coherent result.', position: 'p3' },
-  { number: '3', title: 'Commit and push', body: 'Share only after proof.', position: 'p5' },
-]
 
 const permissionFlow = [
   {
@@ -137,7 +116,7 @@ export function ChapterViews(props: ChapterViewsProps) {
 function BeginnerChapter({
   route,
   completedSetup,
-  copied,
+  copyFeedback,
   onNavigate,
   onToggleSetup,
   onCopy,
@@ -152,60 +131,129 @@ function BeginnerChapter({
     <article className="chapter-view">
       <ChapterIntro
         eyebrow="Beginner · setup path"
-        title="Start small. See it work."
-        lede="You do not need to learn everything at once. Set up one safe local project, give Codex one clear task, and inspect the result."
+        title="Make your first useful run."
+        lede="Set up one safe local project, give Codex a clear task, and inspect the result. Each step below opens exactly where you click."
       />
-      <div className="beginner-layout">
-        <section className="setup-panel">
-          <p className="section-label">Your first five steps</p>
-          <div className="setup-step-list">
+      <div className="lesson-stage beginner-stage">
+        <section className="learning-copy">
+          <div className="section-heading">
+            <p className="section-label">Your first five steps</p>
+            <span>{activeIndex + 1} of {setupSteps.length}</span>
+          </div>
+          <div className="disclosure-list setup-disclosures">
             {setupSteps.map((item, index) => {
               const isActive = item.id === step.id
               const isDone = completedSetup.includes(item.id)
               return (
-                <button
-                  className={`setup-step ${isActive ? 'is-active' : ''}`}
-                  type="button"
-                  aria-current={isActive ? 'step' : undefined}
-                  onClick={() => onNavigate({ chapter: 'beginner', lesson: 'setup', detail: item.id })}
-                  key={item.id}
-                >
-                  <span className="setup-number">{isDone ? <Check size={18} /> : index + 1}</span>
-                  <span><strong>{item.title}</strong><small>{item.short}</small></span>
-                </button>
+                <section className={`disclosure-item ${isActive ? 'is-active' : ''}`} key={item.id}>
+                  <button
+                    className="disclosure-trigger"
+                    type="button"
+                    aria-expanded={isActive}
+                    onClick={() => onNavigate({ chapter: 'beginner', lesson: 'setup', detail: item.id })}
+                  >
+                    <span className="disclosure-number">{isDone ? <Check size={18} /> : index + 1}</span>
+                    <span className="disclosure-title">
+                      <strong>{item.title}</strong>
+                      <small>{item.short}</small>
+                    </span>
+                    <ChevronDown className="disclosure-chevron" size={19} aria-hidden="true" />
+                  </button>
+                  {isActive && (
+                    <div className="disclosure-panel">
+                      <p className="reading-copy">{step.body}</p>
+                      <aside className="lesson-note"><Sparkles size={20} /><span>{step.note}</span></aside>
+                      {step.prompt && (
+                        <PromptBox id={`setup-${step.id}`} value={step.prompt} copyFeedback={copyFeedback} onCopy={onCopy} />
+                      )}
+                      <div className="lesson-actions">
+                        <button className={`primary-button ${completed ? 'is-complete' : ''}`} type="button" onClick={() => onToggleSetup(step.id)}>
+                          {completed ? <CheckCircle2 size={20} /> : <Check size={20} />}
+                          {completed ? 'Marked complete' : 'Mark step complete'}
+                        </button>
+                        <a className="text-link" href={step.docs} target="_blank" rel="noreferrer">
+                          {step.action} <ExternalLink size={16} />
+                        </a>
+                      </div>
+                    </div>
+                  )}
+                </section>
               )
             })}
           </div>
         </section>
-        <div className="chapter-primary">
-          <TeachingCanvas
-            image="/images/generated/setup-path-infographic.png"
-            alt="Illustrated five-step path for getting started with Codex"
-            caption="Your first hour is a short path: install, sign in, choose a folder, stay local, then ask for one visible result."
-            hotspots={setupHotspots}
-            onZoom={(trigger) => onZoom({ src: step.image, alt: step.imageAlt }, trigger)}
-          />
-          <section className="lesson-detail">
-            <p className="lesson-count">Step {activeIndex + 1} of {setupSteps.length}</p>
-            <h2>{step.title}</h2>
-            <p className="reading-copy">{step.body}</p>
-            <aside className="lesson-note"><Sparkles size={20} /><span>{step.note}</span></aside>
-            {step.prompt && (
-              <PromptBox id={`setup-${step.id}`} value={step.prompt} copied={copied} onCopy={onCopy} />
-            )}
-            <div className="lesson-actions">
-              <button className={`primary-button ${completed ? 'is-complete' : ''}`} type="button" onClick={() => onToggleSetup(step.id)}>
-                {completed ? <CheckCircle2 size={20} /> : <Check size={20} />}
-                {completed ? 'Marked complete' : 'Mark step complete'}
-              </button>
-              <a className="text-link" href={step.docs} target="_blank" rel="noreferrer">
-                {step.action} <ExternalLink size={16} />
-              </a>
-            </div>
-          </section>
-        </div>
+        <aside className="context-visual" key={step.id}>
+          <SetupVisual stepId={step.id} onZoom={onZoom} />
+        </aside>
       </div>
     </article>
+  )
+}
+
+function SetupVisual({ stepId, onZoom }: { stepId: string; onZoom: ChapterViewsProps['onZoom'] }) {
+  if (stepId === 'signin') {
+    return (
+      <ConceptCanvas
+        icon={<KeyRound size={28} />}
+        eyebrow="Secure sign-in"
+        title="Begin with your ChatGPT account."
+        caption="An API key is available too, but a ChatGPT account is the simplest first path."
+        source="https://developers.openai.com/codex/app/"
+      >
+        <div className="choice-stack">
+          <div className="concept-choice is-recommended"><CheckCircle2 size={19} /><span><strong>ChatGPT account</strong><small>Recommended for a complete beginner</small></span></div>
+          <div className="concept-choice"><KeyRound size={19} /><span><strong>OpenAI API key</strong><small>Useful when your workflow calls for it</small></span></div>
+        </div>
+      </ConceptCanvas>
+    )
+  }
+
+  if (stepId === 'prompt') {
+    return (
+      <ConceptCanvas
+        icon={<MessageSquare size={28} />}
+        eyebrow="First prompt"
+        title="Ask for a small visible result."
+        caption="A beginner-friendly prompt names the folder, the finish line, and the proof you want to inspect."
+        source="https://developers.openai.com/codex/learn/best-practices"
+      >
+        <div className="composer-demo">
+          <p>Read this folder first. Explain it simply, then suggest one safe improvement.</p>
+          <span><Sparkles size={16} /> Ask for evidence</span>
+        </div>
+      </ConceptCanvas>
+    )
+  }
+
+  const visual = stepId === 'project'
+    ? {
+        image: '/images/official/multitask-light.webp',
+        alt: 'Official Codex app screenshot showing projects and threads',
+        caption: 'Choose one project folder, then keep each focused task in its own thread.',
+        source: 'https://developers.openai.com/codex/app/features',
+      }
+    : stepId === 'local'
+      ? {
+          image: '/images/official/modes-light.webp',
+          alt: 'Official Codex app screenshot showing Local, Worktree, and Cloud task modes',
+          caption: 'Start in Local mode. Worktrees and cloud tasks become useful after the basic loop feels familiar.',
+          source: 'https://developers.openai.com/codex/app/features',
+        }
+      : {
+          image: '/images/generated/setup-path-infographic.png',
+          alt: 'Illustrated path from installing Codex to sending a first prompt',
+          caption: 'Install the desktop app, then return to the guide for a short first run.',
+          source: 'https://developers.openai.com/codex/app/',
+        }
+
+  return (
+    <TeachingCanvas
+      image={visual.image}
+      alt={visual.alt}
+      caption={visual.caption}
+      source={visual.source}
+      onZoom={(trigger) => onZoom({ src: visual.image, alt: visual.alt }, trigger)}
+    />
   )
 }
 
@@ -237,34 +285,24 @@ function InterfaceLesson({ onZoom }: Pick<ChapterViewsProps, 'onZoom'>) {
   const tour = tourShots.find((shot) => shot.id === activeTour) ?? tourShots[0]
 
   return (
-    <div className="lesson-grid">
-      <TeachingCanvas
-        image={tour.image}
-        alt={tour.imageAlt}
-        caption="A project is the folder. A thread is one conversation inside it. The mode decides where the task runs."
-        source={tour.docs}
-        hotspots={interfaceHotspots}
-        onZoom={(trigger) => onZoom({ src: tour.image, alt: tour.imageAlt }, trigger)}
-      />
-      <section className="open-panel lesson-selector">
+    <div className="lesson-stage">
+      <section className="learning-copy">
         <p className="section-label">Three ideas to keep</p>
-        {tourShots.map((shot, index) => (
-          <button
-            className={`selector-row ${shot.id === tour.id ? 'is-active' : ''}`}
-            type="button"
-            aria-pressed={shot.id === tour.id}
-            onClick={() => setActiveTour(shot.id)}
-            key={shot.id}
-          >
-            <span>{index + 1}</span>
-            <strong>{shot.label}</strong>
-          </button>
-        ))}
-        <div className="selector-explanation">
-          <h2>{tour.title}</h2>
-          <p>{tour.body}</p>
-        </div>
+        <DisclosureSelector
+          activeId={tour.id}
+          items={tourShots.map((shot) => ({ id: shot.id, label: shot.label, title: shot.title, body: shot.body, source: shot.docs }))}
+          onChoose={setActiveTour}
+        />
       </section>
+      <aside className="context-visual" key={tour.id}>
+        <TeachingCanvas
+          image={tour.image}
+          alt={tour.imageAlt}
+          caption="A project is the folder. A thread is one conversation inside it. The mode decides where the task runs."
+          source={tour.docs}
+          onZoom={(trigger) => onZoom({ src: tour.image, alt: tour.imageAlt }, trigger)}
+        />
+      </aside>
     </div>
   )
 }
@@ -274,39 +312,24 @@ function SettingsLesson({ onZoom }: Pick<ChapterViewsProps, 'onZoom'>) {
   const setting = settingsPanels.find((panel) => panel.id === activeId) ?? settingsPanels[0]
 
   return (
-    <div className="lesson-grid">
-      <TeachingCanvas
-        image={setting.image}
-        alt={setting.imageAlt}
-        caption="Keep settings simple at first. A readable workspace and careful permissions matter more than extensive customization."
-        source={setting.docs}
-        hotspots={[
-          { number: '1', title: 'Readability', body: 'Choose a comfortable theme.', position: 'p1' },
-          { number: '2', title: 'Permissions', body: 'Grant only what the task needs.', position: 'p3' },
-          { number: '3', title: 'Defaults', body: 'Tune more when useful.', position: 'p5' },
-        ]}
-        onZoom={(trigger) => onZoom({ src: setting.image, alt: setting.imageAlt }, trigger)}
-      />
-      <section className="open-panel lesson-selector">
+    <div className="lesson-stage">
+      <section className="learning-copy">
         <p className="section-label">Settings studio</p>
-        {settingsPanels.map((panel) => (
-          <button
-            className={`selector-row ${panel.id === setting.id ? 'is-active' : ''}`}
-            type="button"
-            aria-pressed={panel.id === setting.id}
-            onClick={() => setActiveId(panel.id)}
-            key={panel.id}
-          >
-            <Settings2 size={18} />
-            <strong>{panel.label}</strong>
-          </button>
-        ))}
-        <div className="selector-explanation">
-          <h2>{setting.title}</h2>
-          <p>{setting.body}</p>
-          <ul>{setting.bullets.map((bullet) => <li key={bullet}>{bullet}</li>)}</ul>
-        </div>
+        <DisclosureSelector
+          activeId={setting.id}
+          items={settingsPanels.map((panel) => ({ id: panel.id, label: panel.label, title: panel.title, body: panel.body, bullets: panel.bullets, source: panel.docs, icon: <Settings2 size={18} /> }))}
+          onChoose={setActiveId}
+        />
       </section>
+      <aside className="context-visual" key={setting.id}>
+        <TeachingCanvas
+          image={setting.image}
+          alt={setting.imageAlt}
+          caption="Keep settings simple at first. Readability and careful permissions matter more than extensive customization."
+          source={setting.docs}
+          onZoom={(trigger) => onZoom({ src: setting.image, alt: setting.imageAlt }, trigger)}
+        />
+      </aside>
     </div>
   )
 }
@@ -342,43 +365,38 @@ function ToolChooserLesson({ onZoom }: Pick<ChapterViewsProps, 'onZoom'>) {
   const tool = toolPanels.find((panel) => panel.id === activeId) ?? toolPanels[0]
 
   return (
-    <div className="lesson-grid">
-      <TeachingCanvas
-        image={tool.image}
-        alt={tool.imageAlt}
-        caption="For local websites, the in-app Browser is a natural first stop: open, inspect, verify."
-        source={tool.docs}
-        hotspots={browserHotspots}
-        onZoom={(trigger) => onZoom({ src: tool.image, alt: tool.imageAlt }, trigger)}
-      />
-      <section className="open-panel lesson-selector">
+    <div className="lesson-stage">
+      <section className="learning-copy">
         <p className="section-label">Choose by job</p>
-        {toolPanels.map((panel) => (
-          <button
-            className={`selector-row ${panel.id === tool.id ? 'is-active' : ''}`}
-            type="button"
-            aria-pressed={panel.id === tool.id}
-            onClick={() => setActiveId(panel.id)}
-            key={panel.id}
-          >
-            <Wrench size={18} />
-            <strong>{panel.label}</strong>
-          </button>
-        ))}
-        <div className="selector-explanation">
-          <p className="accent-label">{tool.verdict}</p>
-          <h2>{tool.title}</h2>
-          <p>{tool.body}</p>
-          <p><strong>Best for:</strong> {tool.best}</p>
-        </div>
+        <DisclosureSelector
+          activeId={tool.id}
+          items={toolPanels.map((panel) => ({
+            id: panel.id,
+            label: panel.label,
+            title: panel.title,
+            body: panel.body,
+            aside: <><p className="accent-label">{panel.verdict}</p><p><strong>Best for:</strong> {panel.best}</p></>,
+            source: panel.docs,
+            icon: <Wrench size={18} />,
+          }))}
+          onChoose={setActiveId}
+        />
       </section>
+      <aside className="context-visual" key={tool.id}>
+        <TeachingCanvas
+          image={tool.image}
+          alt={tool.imageAlt}
+          caption="Match the surface to the job, then keep the request small enough to inspect."
+          source={tool.docs}
+          onZoom={(trigger) => onZoom({ src: tool.image, alt: tool.imageAlt }, trigger)}
+        />
+      </aside>
     </div>
   )
 }
 
 function ComputerUseLesson() {
   const [activeId, setActiveId] = useState(permissionFlow[0].id)
-  const permission = permissionFlow.find((step) => step.id === activeId) ?? permissionFlow[0]
 
   return (
     <div className="single-lesson">
@@ -389,28 +407,23 @@ function ComputerUseLesson() {
           <p>Keep the task bounded, stay nearby for approvals, and inspect the visible result before continuing.</p>
         </div>
       </section>
-      <div className="permission-flow" aria-label="Computer Use approval flow">
-        {permissionFlow.map((step, index) => {
-          const Icon = step.icon
-          return (
-            <button
-              className={`permission-step ${step.id === permission.id ? 'is-active' : ''}`}
-              type="button"
-              aria-pressed={step.id === permission.id}
-              onClick={() => setActiveId(step.id)}
-              key={step.id}
-            >
-              <span>{index + 1}</span>
-              <Icon size={22} />
-              <strong>{step.label}</strong>
-            </button>
-          )
-        })}
-      </div>
-      <section className="lesson-detail computer-use-detail">
-        <h2>{permission.title}</h2>
-        <p className="reading-copy">{permission.body}</p>
-        <aside className="lesson-note"><ShieldCheck size={20} /><span>{permission.note}</span></aside>
+      <section className="permission-studio">
+        <p className="section-label">The five-step approval loop</p>
+        <DisclosureSelector
+          activeId={activeId}
+          items={permissionFlow.map((step) => {
+            const Icon = step.icon
+            return {
+              id: step.id,
+              label: step.label,
+              title: step.title,
+              body: step.body,
+              aside: <aside className="lesson-note"><ShieldCheck size={20} /><span>{step.note}</span></aside>,
+              icon: <Icon size={20} />,
+            }
+          })}
+          onChoose={setActiveId}
+        />
       </section>
       <div className="plain-columns">
         <InfoColumn title="Good first uses" icon={<MonitorCheck size={22} />} items={['Open a desktop app and inspect one screen', 'Reproduce a visual bug in a simulator', 'Check whether a native window matches a design']} />
@@ -428,11 +441,6 @@ function SkillsPluginsLesson({ onZoom }: Pick<ChapterViewsProps, 'onZoom'>) {
         alt="Official Codex screenshot showing available skills"
         caption="Skills capture repeatable know-how. Plugins bundle larger capabilities and service connections."
         source="https://developers.openai.com/codex/plugins"
-        hotspots={[
-          { number: '1', title: 'Skill', body: 'Reusable instructions.', position: 'p1' },
-          { number: '2', title: 'Plugin', body: 'Installable capability.', position: 'p3' },
-          { number: '3', title: 'Connector', body: 'External data and tools.', position: 'p5' },
-        ]}
         onZoom={(trigger) => onZoom({ src: '/images/official/skill-selector-light.webp', alt: 'Official Codex screenshot showing available skills' }, trigger)}
       />
       <section className="extension-list">
@@ -444,7 +452,7 @@ function SkillsPluginsLesson({ onZoom }: Pick<ChapterViewsProps, 'onZoom'>) {
   )
 }
 
-function PromptLibraryLesson({ route, copied, onCopy }: ChapterViewsProps) {
+function PromptLibraryLesson({ route, copyFeedback, onCopy }: ChapterViewsProps) {
   const [category, setCategory] = useState<PromptCategory>('all')
   const [query, setQuery] = useState('')
   const [expandedPrompt, setExpandedPrompt] = useState(route.detail ?? promptLibrary[0].id)
@@ -487,7 +495,7 @@ function PromptLibraryLesson({ route, copied, onCopy }: ChapterViewsProps) {
                 </span>
                 <ArrowRight size={20} />
               </button>
-              {expanded && <PromptBox id={`library-${prompt.id}`} value={prompt.prompt} copied={copied} onCopy={onCopy} />}
+              {expanded && <PromptBox id={`library-${prompt.id}`} value={prompt.prompt} copyFeedback={copyFeedback} onCopy={onCopy} />}
             </article>
           )
         })}
@@ -496,7 +504,9 @@ function PromptLibraryLesson({ route, copied, onCopy }: ChapterViewsProps) {
   )
 }
 
-function PublishChapter({ copied, onCopy, onZoom }: ChapterViewsProps) {
+function PublishChapter({ copyFeedback, onCopy, onZoom }: ChapterViewsProps) {
+  const [activeStep, setActiveStep] = useState(shippingSteps[0].title)
+
   return (
     <article className="chapter-view">
       <ChapterIntro
@@ -510,7 +520,6 @@ function PublishChapter({ copied, onCopy, onZoom }: ChapterViewsProps) {
           alt="Official Codex screenshot showing the Git commit interface"
           caption="A clean commit records one understandable result after you have inspected and verified it."
           source="https://developers.openai.com/codex/app/review"
-          hotspots={publishHotspots}
           onZoom={(trigger) => onZoom({ src: '/images/official/git-commit-light.webp', alt: 'Official Codex screenshot showing the Git commit interface' }, trigger)}
         />
         <aside className="git-loop-card">
@@ -525,21 +534,24 @@ function PublishChapter({ copied, onCopy, onZoom }: ChapterViewsProps) {
         </aside>
       </div>
       <section className="shipping-list">
-        {shippingSteps.map((step) => (
-          <article className="shipping-step" key={step.title}>
-            <div>
-              <h2>{step.title}</h2>
-              <p>{step.body}</p>
-            </div>
-            <PromptBox id={`ship-${step.title}`} value={step.prompt} copied={copied} onCopy={onCopy} compact />
-          </article>
-        ))}
+        <p className="section-label">Your publishing path</p>
+        <DisclosureSelector
+          activeId={activeStep}
+          items={shippingSteps.map((step) => ({
+            id: step.title,
+            label: step.title.replace(/^\d+\.\s*/, ''),
+            title: step.title.replace(/^\d+\.\s*/, ''),
+            body: step.body,
+            aside: <PromptBox id={`ship-${step.title}`} value={step.prompt} copyFeedback={copyFeedback} onCopy={onCopy} compact />,
+          }))}
+          onChoose={setActiveStep}
+        />
       </section>
     </article>
   )
 }
 
-function AdvancedChapter({ route, onNavigate, copied, onCopy }: ChapterViewsProps) {
+function AdvancedChapter({ route, onNavigate, copyFeedback, onCopy }: ChapterViewsProps) {
   return (
     <article className="chapter-view">
       <ChapterIntro
@@ -556,7 +568,7 @@ function AdvancedChapter({ route, onNavigate, copied, onCopy }: ChapterViewsProp
         ]}
         onChoose={(lesson) => onNavigate({ chapter: 'advanced', lesson })}
       />
-      {route.lesson === 'workflows' && <AdvancedWorkflows copied={copied} onCopy={onCopy} />}
+      {route.lesson === 'workflows' && <AdvancedWorkflows copyFeedback={copyFeedback} onCopy={onCopy} />}
       {route.lesson === 'sources' && <SourcesLesson />}
       {route.lesson === 'model-effort' && <ModelEffortLesson />}
     </article>
@@ -594,7 +606,7 @@ function ModelEffortLesson() {
   )
 }
 
-function AdvancedWorkflows({ copied, onCopy }: Pick<ChapterViewsProps, 'copied' | 'onCopy'>) {
+function AdvancedWorkflows({ copyFeedback, onCopy }: Pick<ChapterViewsProps, 'copyFeedback' | 'onCopy'>) {
   return (
     <div className="single-lesson">
       <section className="workflow-cards">
@@ -613,7 +625,7 @@ function AdvancedWorkflows({ copied, onCopy }: Pick<ChapterViewsProps, 'copied' 
         <PromptBox
           id="advanced-checkpoints"
           value="Audit this project, propose a short implementation plan, then work through it end to end. Verify the local result in the browser at desktop and mobile sizes. Pause before any external account action. After implementation, audit the result again and fix the gaps you find."
-          copied={copied}
+          copyFeedback={copyFeedback}
           onCopy={onCopy}
         />
       </section>
@@ -672,27 +684,109 @@ function LessonSubnav({
   )
 }
 
+function DisclosureSelector({
+  activeId,
+  items,
+  onChoose,
+}: {
+  activeId: string
+  items: Array<{
+    id: string
+    label: string
+    title: string
+    body: string
+    bullets?: string[]
+    aside?: ReactNode
+    source?: string
+    icon?: ReactNode
+  }>
+  onChoose: (id: string) => void
+}) {
+  return (
+    <div className="disclosure-list">
+      {items.map((item, index) => {
+        const expanded = item.id === activeId
+        return (
+          <section className={`disclosure-item ${expanded ? 'is-active' : ''}`} key={item.id}>
+            <button className="disclosure-trigger" type="button" aria-expanded={expanded} onClick={() => onChoose(item.id)}>
+              <span className="disclosure-number">{item.icon ?? index + 1}</span>
+              <span className="disclosure-title"><strong>{item.label}</strong></span>
+              <ChevronDown className="disclosure-chevron" size={19} aria-hidden="true" />
+            </button>
+            {expanded && (
+              <div className="disclosure-panel">
+                <h2>{item.title}</h2>
+                <p className="reading-copy">{item.body}</p>
+                {item.bullets && <ul>{item.bullets.map((bullet) => <li key={bullet}>{bullet}</li>)}</ul>}
+                {item.aside}
+                {item.source && (
+                  <a className="text-link disclosure-source" href={item.source} target="_blank" rel="noreferrer">
+                    Read official guide <ExternalLink size={16} />
+                  </a>
+                )}
+              </div>
+            )}
+          </section>
+        )
+      })}
+    </div>
+  )
+}
+
+function ConceptCanvas({
+  icon,
+  eyebrow,
+  title,
+  caption,
+  source,
+  children,
+}: {
+  icon: ReactNode
+  eyebrow: string
+  title: string
+  caption: string
+  source: string
+  children: ReactNode
+}) {
+  return (
+    <figure className="teaching-canvas concept-canvas">
+      <div className="concept-stage">
+        <span className="concept-icon">{icon}</span>
+        <p className="accent-label">{eyebrow}</p>
+        <h2>{title}</h2>
+        {children}
+      </div>
+      <figcaption>
+        <span>{caption}</span>
+        <a href={source} target="_blank" rel="noreferrer">
+          Open source <ExternalLink size={16} />
+        </a>
+      </figcaption>
+    </figure>
+  )
+}
+
 function PromptBox({
   id,
   value,
-  copied,
+  copyFeedback,
   onCopy,
   compact = false,
 }: {
   id: string
   value: string
-  copied: string | null
+  copyFeedback: CopyFeedback
   onCopy: (id: string, value: string) => void
   compact?: boolean
 }) {
-  const isCopied = copied === id
+  const feedback = copyFeedback?.id === id ? copyFeedback.state : null
   return (
     <div className={`prompt-box ${compact ? 'is-compact' : ''}`}>
       <div className="prompt-box-heading">
         <span><TerminalSquare size={18} /> Prompt to try</span>
-        <button className="copy-button" type="button" onClick={() => onCopy(id, value)}>
-          {isCopied ? <Check size={18} /> : <Clipboard size={18} />}
-          {isCopied ? 'Copied' : 'Copy'}
+        <button className={`copy-button ${feedback === 'failed' ? 'is-failed' : ''}`} type="button" onClick={() => onCopy(id, value)} aria-live="polite">
+          {feedback === 'copied' ? <Check size={18} /> : <Clipboard size={18} />}
+          {feedback === 'copied' ? 'Copied' : feedback === 'failed' ? 'Try again' : 'Copy'}
         </button>
       </div>
       <p>{value}</p>
